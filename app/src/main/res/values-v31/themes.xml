@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.NoteApp.Starting" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/Theme.NoteApp</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/animated_logo</item>
+        <item name="android:windowSplashScreenAnimationDuration">1000</item>
+    </style>
+</resources>
