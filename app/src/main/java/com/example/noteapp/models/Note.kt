@@ -7,9 +7,9 @@ data class Notes(
 )
 
 data class Note(
-    val id: Int,
-    var title: String,
-    var body: String,
-    val createdDate: String,
-    var updatedDate:String
+    val id: Int = 0,
+    var title: String = "",
+    var body: String = "",
+    val createdDate: String = "",
+    var updatedDate:String = ""
 )

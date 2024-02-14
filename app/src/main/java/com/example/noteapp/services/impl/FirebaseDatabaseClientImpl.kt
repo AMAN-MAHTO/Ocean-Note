@@ -7,7 +7,10 @@ import com.example.noteapp.services.DatabaseClient
 import com.example.noteapp.services.GoogleAuthUiClient
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlin.math.log
 
 val TAG = "FIREBASE"
 
@@ -25,25 +28,47 @@ class FirebaseDatabaseClientImpl @Inject constructor(
         updatedDate = "2024-01-10 09:45:00"
     )
 
-    private var userDB:DocumentReference
+    private var userDB:DocumentReference? = null
 
     //create NoteDatabase for user if not exist
     init {
+        if(googleAuthUiClient.getSignedInUser() != null){
 
             userDB = db.collection("NoteDatabase")
-                    .document(googleAuthUiClient.getSignedInUser()!!.userId)
+                .document(googleAuthUiClient.getSignedInUser()!!.userId)
+        }
+
 
 
     }
 
     override suspend fun addNote(note: Note): Boolean {
         var success:Boolean = false
-        userDB.set(note).addOnSuccessListener {success = true }.addOnFailureListener{success = false}
+        userDB?.let {
+            it.collection("Notes").document(note.id.toString()).set(note)
+                .addOnSuccessListener { success = true }.addOnFailureListener { success = false }
+        }
         return success
     }
 
     override suspend fun getNotes(userId: String): List<Note> {
-        TODO("Not yet implemented")
+        val list = mutableListOf<Note>()
+        userDB?.let {
+            try {
+                //why, because interacting with a Firestore database, which is asynchronous in nature.
+                val querySnapshot= it.collection("Notes").get().await()
+                querySnapshot.documents.forEach {
+                    it.toObject<Note>()?.let { list.add(it) }
+
+                }
+
+
+            }catch(e: Exception) {
+                    Log.d(TAG, "get failed with ", e)
+                }
+        }
+
+        return list
     }
 
     override suspend fun getNoteById(id: String): Note {

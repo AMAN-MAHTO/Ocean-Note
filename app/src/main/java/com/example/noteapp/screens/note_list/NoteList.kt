@@ -1,6 +1,7 @@
 package com.example.noteapp.screens.note_list
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,8 @@ fun NoteList(
     noteListViewModel: NoteListViewModel = hiltViewModel(),
     onNoteListTileClick:()->Unit
 ) {
+    val notes = noteListViewModel.note.collectAsState()
+    val isDataFetched = noteListViewModel.isDataFetched.collectAsState()
 
     LazyVerticalStaggeredGrid(
         modifier = Modifier.padding(innerPadding),
@@ -39,17 +43,26 @@ fun NoteList(
 
 
     ){
-        val notes = noteListViewModel.getNotes()
 
-        for (i in 1..100){
-            item {
+            if(notes.value.isNotEmpty() ){
+                Log.d("FIREBASE", "NoteList: ${notes.value}")
+                val n = notes.value.size - 1
+                for (i in 0..n){
+                    item {
 
-                NoteListTile(notes[i%notes.size]){
-                    noteListViewModel.setSelectedNote(notes[i%notes.size])
-                    onNoteListTileClick()
+                        NoteListTile(notes.value[i]){
+
+                            onNoteListTileClick()
+                        }
+                    }
+
                 }
             }
 
+        else{
+            item {
+                Text(text = "Loading..")
+            }
         }
     }
 
