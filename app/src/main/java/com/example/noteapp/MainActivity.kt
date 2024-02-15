@@ -26,9 +26,6 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var googleAuthUiClient: GoogleAuthUiClient
 
-    @Inject
-    lateinit var databaseClient: DatabaseClient
-
     val mainViewModel: MainViewModel by viewModels()
 
 

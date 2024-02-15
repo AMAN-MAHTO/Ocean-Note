@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
 fun Home(
     homeViewModel: HomeViewModel = hiltViewModel(),
     navController: NavController,
-    onNoteListTileClick:()->Unit,
+    onNoteListTileClick:(id: String)->Unit,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -134,7 +134,7 @@ fun Home(
             }
         ) { innerPadding ->
             NoteList(innerPadding){
-                onNoteListTileClick()
+                onNoteListTileClick(it)
             }
         }
     }

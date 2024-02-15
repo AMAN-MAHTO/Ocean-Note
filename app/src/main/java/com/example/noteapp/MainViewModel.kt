@@ -1,6 +1,7 @@
 package com.example.noteapp
 
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
+val TAG = "MainViewModel"
 @HiltViewModel
 class MainViewModel @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient
@@ -29,13 +30,15 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             if(googleAuthUiClient.getSignedInUser() != null){
+
                 _startDestination.value = Screen.Home.route
             }else{
                 _startDestination.value = Screen.SignIn.route
             }
 
-            _isReady.value = true
+
         }
+        _isReady.value = true
     }
 
 

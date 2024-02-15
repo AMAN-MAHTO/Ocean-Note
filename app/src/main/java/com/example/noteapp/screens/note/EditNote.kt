@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.noteapp.models.Note
+import androidx.navigation.NavBackStackEntry
+import com.example.noteapp.models.NoteData
 import com.example.noteapp.screens.note_list.NoteListViewModel
 
 
@@ -27,17 +27,15 @@ import com.example.noteapp.screens.note_list.NoteListViewModel
 @Composable
 fun Note(
     noteViewModel: NoteViewModel = hiltViewModel(),
-    noteListViewModel: NoteListViewModel = hiltViewModel()
+
 ) {
-    val note = Note(
-        id = 1,
-        title = "Meeting Notes and Action Items",
-        body = "Discussed project updates and deadlines with the team. Assigned action items to each team member.",
-        createdDate = "2024-01-10 09:30:00",
-        updatedDate = "2024-01-10 09:45:00"
-    )
-    val title = mutableStateOf(note.title)
-    val body = mutableStateOf(note.body)
+     val note = noteViewModel.note.collectAsState()
+
+
+    val title = mutableStateOf(note.value.title)
+    val body = mutableStateOf(note.value.body)
+
+
     val readOnly = noteViewModel.readOnly.collectAsState()
     val floatingActionButtonIcon = noteViewModel.floatingActionButtonIcon.collectAsState()
 
@@ -45,13 +43,6 @@ fun Note(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-
-//                        noteListViewModel.updateNote(
-//                            Note(note.value.id,
-//                                title.value,body.value,
-//                                note.value.createdDate,
-//                                note.value.updatedDate)
-//                        )
 
                     noteViewModel.toogleFlootingActionButtonIcon()
                     noteViewModel.toogleReadOnly()
@@ -80,7 +71,9 @@ fun Note(
             TextField(
                 readOnly = readOnly.value,
                 value = body.value,
-                modifier = Modifier.fillMaxHeight(1f).fillMaxWidth(1f),
+                modifier = Modifier
+                    .fillMaxHeight(1f)
+                    .fillMaxWidth(1f),
                 textStyle = MaterialTheme.typography.bodyMedium,
                 onValueChange = {
                 body.value = it
@@ -99,7 +92,7 @@ fun Note(
 @Preview(showBackground = true)
 @Composable
 fun NotePreview() {
-    Note()
+    NoteData()
 }
 
 

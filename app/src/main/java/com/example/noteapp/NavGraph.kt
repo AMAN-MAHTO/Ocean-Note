@@ -1,10 +1,8 @@
 package com.example.noteapp
 
 import android.app.Activity.RESULT_OK
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -13,6 +11,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.bookofgiants.screens.sign_up.SignUp
 import com.example.noteapp.screens.home.Home
 import com.example.noteapp.screens.note.Note
@@ -95,8 +94,12 @@ fun NavGraph(navController: NavHostController,
         }
 
         composable(
-            Screen.Note.route
+            Screen.EditNote.route,
+            arguments = listOf(navArgument(EDIT_NOTE_ARGUMENT_ID){defaultValue = ""})
+
         ){
+            // by default this argument get stored at two place NavBackStackEntry and SavedStateHandle
+            // thourgh SavedSateHandle we can access this argument is viewModel
             Note()
         }
 
@@ -105,7 +108,7 @@ fun NavGraph(navController: NavHostController,
         ){
             Home(navController = navController,
                 onNoteListTileClick = {
-                    navController.navigate(Screen.Note.route)
+                    navController.navigate(Screen.EditNote.setId(it))
                 }
             )
         }
