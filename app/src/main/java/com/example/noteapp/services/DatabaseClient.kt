@@ -6,7 +6,9 @@ import com.example.noteapp.models.NoteData
 interface DatabaseClient {
     suspend fun getNotes():List<Note>
     suspend fun getNoteById(id: String):NoteData?
-    suspend fun updateNoteById(note: Note):Boolean
+
+    suspend fun getRealTimeNotes(listner: (List<Note>)->Unit)
+    suspend fun updateNoteById(noteId: String, noteData: NoteData):Boolean
     suspend fun deleteNoteById(id: String):Boolean
-    suspend fun addNote(note:NoteData):Boolean
+    suspend fun addNote(note:NoteData):String
 }

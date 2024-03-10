@@ -94,7 +94,5 @@ class HomeViewModel @Inject constructor(
         return _userData
     }
 
-    fun onFloatingActionButtonAddClick() {
 
-    }
 }

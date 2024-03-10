@@ -67,7 +67,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
-    implementation("androidx.compose.material3:material3-android:1.2.0")
+    implementation("androidx.compose.material3:material3:1.2.1")
     implementation("com.google.firebase:firebase-firestore:24.10.2")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -101,9 +101,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended-android:1.6.1")
 
     // rich text editor
-//    implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc01")
-
-
+    implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc01")
+    implementation(kotlin("reflect"))
 
 
 }

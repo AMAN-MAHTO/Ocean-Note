@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.noteapp.models.Note
+import com.example.noteapp.models.NoteData
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -33,36 +39,44 @@ import com.example.noteapp.models.Note
 fun NoteList(
     innerPadding: PaddingValues,
     noteListViewModel: NoteListViewModel = hiltViewModel(),
-    onNoteListTileClick: (id:String) -> Unit
+    onNoteListTileClick: (id:String) -> Unit,
+
 ) {
     val notes = noteListViewModel.note.collectAsState()
     val isDataFetched = noteListViewModel.isDataFetched.collectAsState()
 
 
     if (isDataFetched.value) {
-        LazyVerticalStaggeredGrid(
-            modifier = Modifier.padding(innerPadding),
-            columns = StaggeredGridCells.Adaptive(150.dp),
-            verticalItemSpacing = 4.dp,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        if(notes.value.isNotEmpty()){
+            LazyVerticalStaggeredGrid(
+                modifier = Modifier.padding(innerPadding),
+                columns = StaggeredGridCells.Adaptive(150.dp),
+                verticalItemSpacing = 4.dp,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
 
-        ) {
-            if (notes.value.isNotEmpty()) {
-                Log.d("FIREBASE", "NoteList tile: ${notes.value}")
+            ) {
+
+                Log.d("FIREBASE", "NoteList tile: ${notes.value.size - 1}")
                 val n = notes.value.size - 1
                 for (i in 0..n) {
                     item {
 
-                        NoteListTile(notes.value[i]) {
+                        NoteListTile(notes.value[i] ,
 
-                            onNoteListTileClick(it)
-                        }
+                            onNoteListTileClick = {
+                                onNoteListTileClick(it)
+                            }
+                        )
                     }
 
-                }
-            }
 
+                }
+
+            }
+        }else{
+            Text(text = "Nothing to show!")
         }
+        
     } else {
         Box(
             Modifier.fillMaxSize(1f),
@@ -89,30 +103,19 @@ fun NoteListTile(note: Note, onNoteListTileClick: (id: String) -> Unit) {
 
             Text(text = note.data.title, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "May 22, 2024")
+            Text(text = note.data.updatedDate.split(" ")[0])
+
         }
     }
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun PreviewNoteList() {
 
-    Box(
-        Modifier.fillMaxSize(1f),
-        contentAlignment = Alignment.TopStart
-    ) {
-
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth(1f))
-    }
-
-
-}
 
 @Preview
 @Composable
 fun PreviewNoteListTile() {
-
+    NoteListTile(note = Note("33",
+        NoteData("Title are realy big in size what to do now help","Body text hese","12-00-0000","13-00-0000")),
+        onNoteListTileClick = {})
 }

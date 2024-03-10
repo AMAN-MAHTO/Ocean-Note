@@ -100,7 +100,10 @@ fun NavGraph(navController: NavHostController,
         ){
             // by default this argument get stored at two place NavBackStackEntry and SavedStateHandle
             // thourgh SavedSateHandle we can access this argument is viewModel
-            Note()
+            Note(onEditBackIconClickNavigation = {
+                navController.popBackStack()
+                navController.navigate(Screen.Home.route)
+            })
         }
 
         composable(
@@ -109,6 +112,9 @@ fun NavGraph(navController: NavHostController,
             Home(navController = navController,
                 onNoteListTileClick = {
                     navController.navigate(Screen.EditNote.setId(it))
+                },
+                onClickAddNewNote = {
+                    navController.navigate(Screen.EditNote.setId())
                 }
             )
         }

@@ -94,7 +94,9 @@ class NoteListViewModel @Inject constructor(private val databaseClient: Database
 //            }
 
             // fetching all the notes of user
-            _notes.value = databaseClient.getNotes()
+             databaseClient.getRealTimeNotes {
+                 _notes.value = it
+             }
             Log.d("FIREBASE", "NoteList view-model init: ${_notes.value}")
             _isDataFetched.value = true
 
@@ -116,6 +118,10 @@ class NoteListViewModel @Inject constructor(private val databaseClient: Database
 //            this?.updatedDate = "Wed 14, 2024"
 //        }
         Log.d("NOTES", "updateNote: ${_notes.value[0]}")
+    }
+
+    fun onNoteDeleteIconClick(it: String) {
+
     }
 
 

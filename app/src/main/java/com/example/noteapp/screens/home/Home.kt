@@ -67,6 +67,7 @@ fun Home(
     homeViewModel: HomeViewModel = hiltViewModel(),
     navController: NavController,
     onNoteListTileClick:(id: String)->Unit,
+    onClickAddNewNote:()->Unit,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -127,15 +128,14 @@ fun Home(
             },
 
             floatingActionButton = {
-                FloatingActionButton(onClick = {homeViewModel.onFloatingActionButtonAddClick()}) {
+                FloatingActionButton(onClick = {onClickAddNewNote()}) {
 
                     Icon(imageVector = Icons.Filled.Add, contentDescription = "Search icon")
                 }
             }
         ) { innerPadding ->
-            NoteList(innerPadding){
-                onNoteListTileClick(it)
-            }
+            NoteList(innerPadding,onNoteListTileClick={onNoteListTileClick(it)})
+
         }
     }
 

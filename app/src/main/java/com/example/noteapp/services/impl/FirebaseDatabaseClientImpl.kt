@@ -32,7 +32,7 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                 .document(userData.userId)
 
 //            userDB?.set(userData)
-            notesCollectionReference = userDB?.collection("Notes")
+            notesCollectionReference = db.collection("Notes")
 
         }
         Log.d(TAG, "userDB: $userDB")
@@ -41,13 +41,13 @@ class FirebaseDatabaseClientImpl @Inject constructor(
 
     }
 
-    override suspend fun addNote(note: NoteData): Boolean {
-        var success:Boolean = false
+    override suspend fun addNote(note: NoteData): String {
+        var docRef = ""
         notesCollectionReference?.let {
-            it.add(note)
-                .addOnSuccessListener { success = true }.addOnFailureListener { success = false }
+            docRef = it.add(note).await().toString()
+
         }
-        return success
+        return docRef
     }
 
     override suspend fun getNotes(): List<Note> {
@@ -88,8 +88,56 @@ class FirebaseDatabaseClientImpl @Inject constructor(
         return note
     }
 
-    override suspend fun updateNoteById(note: Note): Boolean {
-        TODO("Not yet implemented")
+    override suspend fun getRealTimeNotes(listner: (List<Note>) -> Unit) {
+        notesCollectionReference?.let {
+            try {
+                //why, because interacting with a Firestore database, which is asynchronous in nature.
+                it.addSnapshotListener { snapshot, e ->
+                    val list = mutableListOf<Note>()
+                    if (e != null) {
+                        Log.w(TAG, "Listen failed.", e)
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null && !snapshot.isEmpty) {
+
+                        snapshot.documents.forEach {documentSnapshot->
+
+                            documentSnapshot.toObject<NoteData>()?.let { list.add(Note(documentSnapshot.id,it)) }
+
+                        }
+
+                    } else {
+                        Log.d(TAG, "Current data: null")
+                    }
+                    listner(list)
+                }
+
+
+            }catch(e: Exception) {
+                Log.d(TAG, "failed to get user notes", e)
+            }
+        }
+    }
+
+    override suspend fun updateNoteById(noteId: String, noteData: NoteData):Boolean {
+        var sucess = false
+        try {
+            notesCollectionReference?.let {
+                it.document(noteId).update(
+                    mapOf(
+                        "title" to noteData.title,
+                        "body" to noteData.body,
+                        "createdDate" to noteData.createdDate,
+                        "updatedDate" to noteData.updatedDate
+                    )
+                ).await()
+                sucess = true
+            }
+        }catch(e: Exception) {
+            Log.d(TAG, "failed to update user notes", e)
+        }
+        return sucess
+
     }
 
     override suspend fun deleteNoteById(id: String): Boolean {
