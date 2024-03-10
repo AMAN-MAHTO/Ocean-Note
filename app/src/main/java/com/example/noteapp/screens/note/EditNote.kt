@@ -69,7 +69,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.noteapp.models.NoteData
+
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
@@ -86,6 +86,22 @@ fun Note(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    var isEditorInitalTextSet = noteViewModel.isEditorInitalTextSet.collectAsState()
+    var note = noteViewModel.note.collectAsState()
+    val state = rememberRichTextState()
+    if(!isEditorInitalTextSet.value){
+        Log.d(TAG, "seting text again: isEditorIntialTextSet ")
+        state.setMarkdown(note.value.data)
+//        state.setMarkdown("**Compose** *Rich* Editor")
+        noteViewModel.updateIsEditorInitalTextSet(true)
+    }
+
+    Log.d(TAG, "rich text editor: ${note.value}  ")
+    val titleSize = MaterialTheme.typography.displaySmall.fontSize
+    val subtitleSize = MaterialTheme.typography.titleLarge.fontSize
+
+
+
     val openAlertDialog = remember { mutableStateOf(false) }
     val isEdited = noteViewModel.isEdited.collectAsState()
 
@@ -98,7 +114,7 @@ fun Note(
                     onEditBackIconClickNavigation()},
                 onConfirmation = {
                     openAlertDialog.value = false
-                    val save = noteViewModel.saveChanges()
+                    val save = noteViewModel.saveChanges(state.toMarkdown())
                     Log.d(TAG, "save status: $save")
                     onEditBackIconClickNavigation()
 
@@ -111,21 +127,6 @@ fun Note(
     }
 
 
-
-    var title = noteViewModel.title.collectAsState()
-    var body = noteViewModel.body.collectAsState()
-    var isEditorInitalTextSet = noteViewModel.isEditorInitalTextSet.collectAsState()
-
-    val state = rememberRichTextState()
-    if(!isEditorInitalTextSet.value){
-        Log.d(TAG, "seting text again: isEditorIntialTextSet ")
-        state.setMarkdown("hhhh")
-        noteViewModel.updateIsEditorInitalTextSet(true)
-    }
-
-    Log.d(TAG, "rich text editor: rebuilding state ")
-    val titleSize = MaterialTheme.typography.displaySmall.fontSize
-    val subtitleSize = MaterialTheme.typography.titleLarge.fontSize
 
 
     val _topAppBarTitle = remember{ mutableStateOf("mode: reading") }
@@ -227,6 +228,7 @@ fun Note(
                         state.toggleParagraphStyle(ParagraphStyle(textAlign = TextAlign.Center))
                     },
                     onExportClick = {
+                        noteViewModel.saveChanges(state.toMarkdown())
                         Log.d(TAG, state.toMarkdown())
                     }
                 )
@@ -513,7 +515,7 @@ fun ControlWrapper(
 @Preview(showBackground = true)
 @Composable
 fun NotePreview() {
-    NoteData()
+
 }
 
 

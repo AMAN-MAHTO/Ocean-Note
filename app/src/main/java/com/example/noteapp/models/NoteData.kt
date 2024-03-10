@@ -7,14 +7,15 @@ data class Notes(
 )
 
 data class Note(
-    val id: String,
-    val data: NoteData
-)
-
-data class NoteData(
-    var title: String = "",
-    var body: String = "",
+    val id: String ="",
+    var data:String = "",
     val createdDate: String = "",
     var updatedDate:String = ""
 )
+
+//data class NoteData(
+//    var data:String = "",
+//    val createdDate: String = "",
+//    var updatedDate:String = ""
+//)
 

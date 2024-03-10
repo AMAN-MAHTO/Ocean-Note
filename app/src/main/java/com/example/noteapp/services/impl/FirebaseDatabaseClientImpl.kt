@@ -2,7 +2,7 @@ package com.example.noteapp.services.impl
 
 import android.util.Log
 import com.example.noteapp.models.Note
-import com.example.noteapp.models.NoteData
+
 import com.example.noteapp.services.DatabaseClient
 import com.example.noteapp.services.GoogleAuthUiClient
 import com.google.firebase.firestore.CollectionReference
@@ -41,13 +41,13 @@ class FirebaseDatabaseClientImpl @Inject constructor(
 
     }
 
-    override suspend fun addNote(note: NoteData): String {
-        var docRef = ""
+    override suspend fun addNote(note: Note): String {
+        var docId = ""
         notesCollectionReference?.let {
-            docRef = it.add(note).await().toString()
+            docId = it.add(note).await().id.toString()
 
         }
-        return docRef
+        return docId
     }
 
     override suspend fun getNotes(): List<Note> {
@@ -59,7 +59,7 @@ class FirebaseDatabaseClientImpl @Inject constructor(
 
                 querySnapshot.documents.forEach {documentSnapshot->
 
-                    documentSnapshot.toObject<NoteData>()?.let { list.add(Note(documentSnapshot.id,it)) }
+                    documentSnapshot.toObject<Note>()?.let { list.add(it) }
 
                 }
 
@@ -72,13 +72,13 @@ class FirebaseDatabaseClientImpl @Inject constructor(
         return list
     }
 
-    override suspend fun getNoteById(id: String): NoteData? {
-        var note:NoteData? = null
+    override suspend fun getNoteById(id: String): Note? {
+        var note:Note? = null
         notesCollectionReference?.let {
             try {
                 val querySnapshot= it.document(id).get().await()
-                Log.d(TAG, "getNoteById id=$id : noteData: ${querySnapshot.toObject<NoteData>()}")
-                note = querySnapshot.toObject<NoteData>()
+                Log.d(TAG, "getNoteById id=$id : noteData: ${querySnapshot.toObject<Note>()}")
+                note = querySnapshot.toObject<Note>()
 
             }catch (e:Exception){
                 Log.d(TAG, "failed to get note with id ", e)
@@ -102,7 +102,7 @@ class FirebaseDatabaseClientImpl @Inject constructor(
 
                         snapshot.documents.forEach {documentSnapshot->
 
-                            documentSnapshot.toObject<NoteData>()?.let { list.add(Note(documentSnapshot.id,it)) }
+                            documentSnapshot.toObject<Note>()?.let { list.add(it) }
 
                         }
 
@@ -119,16 +119,16 @@ class FirebaseDatabaseClientImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateNoteById(noteId: String, noteData: NoteData):Boolean {
+    override suspend fun updateNoteById(note: Note):Boolean {
         var sucess = false
         try {
             notesCollectionReference?.let {
-                it.document(noteId).update(
+                it.document(note.id).update(
                     mapOf(
-                        "title" to noteData.title,
-                        "body" to noteData.body,
-                        "createdDate" to noteData.createdDate,
-                        "updatedDate" to noteData.updatedDate
+                        "id" to note.id,
+                        "data" to note.data,
+                        "createdDate" to note.createdDate,
+                        "updatedDate" to note.updatedDate
                     )
                 ).await()
                 sucess = true

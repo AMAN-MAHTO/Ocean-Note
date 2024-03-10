@@ -10,7 +10,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noteapp.EDIT_NOTE_ARGUMENT_ID
-import com.example.noteapp.models.NoteData
+import com.example.noteapp.models.Note
+
 import com.example.noteapp.services.DatabaseClient
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,23 +33,16 @@ class NoteViewModel @Inject constructor(
 
     private val _noteId = MutableStateFlow(savedStateHandle.get<String>(EDIT_NOTE_ARGUMENT_ID))
 
-    private val _note = MutableStateFlow(NoteData())
-    private val _title = MutableStateFlow(_note.value.title)
-    private val _body = MutableStateFlow(_note.value.body)
+    private val _note = MutableStateFlow(Note(id=_noteId.value?:""))
+    val note = _note.asStateFlow()
+
     private val _isEdited = MutableStateFlow(false)
     private val _isEditorInitalTextSet = MutableStateFlow(false)
     val isEdited = _isEdited.asStateFlow()
-    var title = _title.asStateFlow()
-    var body = _body.asStateFlow()
+
     var isEditorInitalTextSet = _isEditorInitalTextSet.asStateFlow()
-    fun setBody(value:String){
-        _body.value = value
-        _isEdited.value = true
-    }
-    fun setTitle(value:String){
-        _title.value = value
-        _isEdited.value = true
-    }
+
+
     init {
         viewModelScope.launch {
             val id = _noteId.value
@@ -56,9 +50,8 @@ class NoteViewModel @Inject constructor(
             if(id?.isNotEmpty() == true){
 
                 // fetching note from firestore, it it is null, note value is default NoteData
-                _note.value = databaseClient.getNoteById(id)?: NoteData()
-                _title.value = _note.value.title
-                _body.value = _note.value.body
+                _note.value = databaseClient.getNoteById(id)?: Note(id="")
+                _isEditorInitalTextSet.value = false
                 Log.d(TAG, "Note value: ${_note.value}")
             }
         }
@@ -84,15 +77,14 @@ class NoteViewModel @Inject constructor(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun saveChanges(): Boolean {
+    fun saveChanges(data: String): Boolean {
         var sucess = false
         val noteid = _noteId.value
         if(noteid != null){
             if(noteid.isEmpty()){
                 viewModelScope.launch {
                     val note = _note.value.copy(
-                        title = _title.value,
-                        body = _body.value,
+                        data = data,
                         createdDate = LocalDateTime.now().toString(),
                         updatedDate = LocalDateTime.now().toString(),
                     )
@@ -101,18 +93,17 @@ class NoteViewModel @Inject constructor(
             }else{
                 viewModelScope.launch {
                     val note = _note.value.copy(
-                        title = _title.value,
-                        body = _body.value,
+                        data = data,
                         updatedDate = LocalDateTime.now().toString(),
                     )
-                    sucess = databaseClient.updateNoteById(noteid,note)
+                    sucess = databaseClient.updateNoteById(note)
                 }
             }
         }
         return sucess
     }
 
-    fun updateNote(copy: NoteData) {
+    fun updateNote(copy: Note) {
         _note.value = copy
     }
 

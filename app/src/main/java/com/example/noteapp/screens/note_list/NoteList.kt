@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.noteapp.models.Note
-import com.example.noteapp.models.NoteData
+
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -101,9 +101,9 @@ fun NoteListTile(note: Note, onNoteListTileClick: (id: String) -> Unit) {
             modifier = Modifier.padding(16.dp)
         ) {
 
-            Text(text = note.data.title, style = MaterialTheme.typography.titleLarge)
+            Text(text = note.data, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = note.data.updatedDate.split(" ")[0])
+            Text(text = note.updatedDate.split(" ")[0])
 
         }
     }
@@ -116,6 +116,7 @@ fun NoteListTile(note: Note, onNoteListTileClick: (id: String) -> Unit) {
 @Composable
 fun PreviewNoteListTile() {
     NoteListTile(note = Note("33",
-        NoteData("Title are realy big in size what to do now help","Body text hese","12-00-0000","13-00-0000")),
+        data = "Title are realy big in size what to do now help",
+        "12-00-0000","13-00-0000"),
         onNoteListTileClick = {})
 }
