@@ -41,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -49,8 +50,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -76,7 +79,7 @@ fun Home(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(
-
+                modifier = Modifier.fillMaxWidth(.75f)
             ) {
                 DrawerHeader(homeViewModel.getUserData())
                 DrawerBody(homeViewModel.getNavigationItems(),
@@ -163,65 +166,74 @@ fun DrawerBody(
         mutableStateOf(0)
     }
 
-    navigationItems.forEachIndexed { index, navigationItem ->
-        NavigationDrawerItem(
-            //avtive indicater padding
-            modifier = Modifier.padding(start = 12.dp, end = 12.dp,top = 4.dp, bottom = 4.dp),
-            icon = {
-                if (index == selectedItemIndex)
-                    if(navigationItem.title == "Logout"){
-                        Icon(
-                            imageVector = navigationItem.selectedIcon,
-                            contentDescription = "navigation icon selected",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }else
-                    Icon(
-                        imageVector = navigationItem.selectedIcon,
-                        contentDescription = "navigation icon selected"
-                    )
-                else
-                    if(navigationItem.title == "Logout"){
-                        Icon(
-                            imageVector = navigationItem.unselectedIcon,
-                            contentDescription = "navigation icon selected",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }else
-                    Icon(
-                        imageVector = navigationItem.unselectedIcon,
-                        contentDescription = "navigation icon unselected"
-                    )
-            },
-            selected = index == selectedItemIndex,
-            label = {
-                if(navigationItem.title == "Logout"){
-                    Text(text = navigationItem.title, color = MaterialTheme.colorScheme.error)
-                }else{
-                Text(text = navigationItem.title) }
+    
+        navigationItems.forEachIndexed { index, navigationItem ->
+            NavigationDrawerItem(
+                //avtive indicater padding
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+                icon = {
+                    if (index == selectedItemIndex)
+                        if (navigationItem.title == "Logout") {
+                            Icon(
+                                imageVector = navigationItem.selectedIcon,
+                                contentDescription = "navigation icon selected",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        } else
+                            Icon(
+                                imageVector = navigationItem.selectedIcon,
+                                contentDescription = "navigation icon selected"
+                            )
+                    else
+                        if (navigationItem.title == "Logout") {
+                            Icon(
+                                imageVector = navigationItem.unselectedIcon,
+                                contentDescription = "navigation icon selected",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        } else
+                            Icon(
+                                imageVector = navigationItem.unselectedIcon,
+                                contentDescription = "navigation icon unselected"
+                            )
+                },
+                selected = index == selectedItemIndex,
+                label = {
+                    if (navigationItem.title == "Logout") {
+                        Text(text = navigationItem.title, color = MaterialTheme.colorScheme.error)
+                    } else {
+                        Text(text = navigationItem.title)
+                    }
 
                 },
 
-            onClick = {
-                selectedItemIndex = index
-                navigationItem.onItemClick(navController)
-                onNavigationItemClicked()
+                onClick = {
+                    selectedItemIndex = index
+                    navigationItem.onItemClick(navController)
+                    onNavigationItemClicked()
 
-            })
+                })
 
-        if(index == 2 || index == 4){
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 24.dp,end= 24.dp,top = 16.dp,bottom = 16.dp)
-            )
+            if (index == 2 || index == 4) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(
+                        start = 24.dp,
+                        end = 24.dp,
+                        top = 16.dp,
+                        bottom = 16.dp
+                    )
+                )
+
+            }
 
         }
-
-    }
 
 
 
 
 }
+
+
 
 @Composable
 fun DrawerHeader(userData: UserData?) {

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -91,7 +92,7 @@ fun Note(
     val state = rememberRichTextState()
     if(!isEditorInitalTextSet.value){
         Log.d(TAG, "seting text again: isEditorIntialTextSet ")
-        state.setMarkdown(note.value.data)
+        state.setHtml(note.value.data)
 //        state.setMarkdown("**Compose** *Rich* Editor")
         noteViewModel.updateIsEditorInitalTextSet(true)
     }
@@ -114,7 +115,7 @@ fun Note(
                     onEditBackIconClickNavigation()},
                 onConfirmation = {
                     openAlertDialog.value = false
-                    val save = noteViewModel.saveChanges(state.toMarkdown())
+                    val save = noteViewModel.saveChanges(state.toHtml())
                     Log.d(TAG, "save status: $save")
                     onEditBackIconClickNavigation()
 
@@ -228,8 +229,8 @@ fun Note(
                         state.toggleParagraphStyle(ParagraphStyle(textAlign = TextAlign.Center))
                     },
                     onExportClick = {
-                        noteViewModel.saveChanges(state.toMarkdown())
-                        Log.d(TAG, state.toMarkdown())
+                        noteViewModel.saveChanges(state.toHtml())
+                        Log.d(TAG, state.toHtml())
                     }
                 )
             }
@@ -515,7 +516,19 @@ fun ControlWrapper(
 @Preview(showBackground = true)
 @Composable
 fun NotePreview() {
-
+    val state = rememberRichTextState()
+    val value = remember {
+        mutableStateOf(state.toMarkdown())
+    }
+    Column {
+        RichTextEditor(state = state)
+        Button(onClick = {
+            value.value = state.toMarkdown()
+            Log.d("TAG", "NotePreview: ${state.toMarkdown()}")
+        }) {
+            Text(text = value.value)
+        }
+    }
 }
 
 

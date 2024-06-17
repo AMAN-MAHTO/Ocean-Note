@@ -47,6 +47,12 @@ class FirebaseDatabaseClientImpl @Inject constructor(
             docId = it.add(note).await().id.toString()
 
         }
+        notesCollectionReference?.let {
+            it.document(docId).update(
+                mapOf(
+                    "id" to docId,
+                )
+            ).await()}
         return docId
     }
 

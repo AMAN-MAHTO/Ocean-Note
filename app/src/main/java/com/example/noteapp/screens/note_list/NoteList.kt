@@ -31,7 +31,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.noteapp.models.Note
-
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -56,7 +57,7 @@ fun NoteList(
 
             ) {
 
-                Log.d("FIREBASE", "NoteList tile: ${notes.value.size - 1}")
+                Log.d("EditNote", "NoteList tile: ${notes.value.size - 1}")
                 val n = notes.value.size - 1
                 for (i in 0..n) {
                     item {
@@ -92,6 +93,8 @@ fun NoteList(
 
 @Composable
 fun NoteListTile(note: Note, onNoteListTileClick: (id: String) -> Unit) {
+    val state = rememberRichTextState()
+    state.setHtml(note.data)
     Card(
         onClick = {
             onNoteListTileClick(note.id)
@@ -101,7 +104,7 @@ fun NoteListTile(note: Note, onNoteListTileClick: (id: String) -> Unit) {
             modifier = Modifier.padding(16.dp)
         ) {
 
-            Text(text = note.data, style = MaterialTheme.typography.titleLarge)
+            RichText(state = state, style = MaterialTheme.typography.titleMedium, maxLines = 8)
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = note.updatedDate.split(" ")[0])
 
