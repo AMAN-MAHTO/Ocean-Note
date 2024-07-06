@@ -10,19 +10,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.StarRate
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material.icons.outlined.Notes
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.StarRate
-import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.Card
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -41,7 +30,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -50,17 +38,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.noteapp.screens.note_list.NoteList
-import com.example.noteapp.models.UserData
-import com.example.noteapp.services.GoogleAuthUiClient
+import com.example.noteapp.auth.domain.model.UserData
+import com.example.noteapp.note.presentation.DocumentListScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -68,7 +55,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun Home(
     homeViewModel: HomeViewModel = hiltViewModel(),
-    navController: NavController,
+    navHostController: NavHostController,
     onNoteListTileClick:(id: String)->Unit,
     onClickAddNewNote:()->Unit,
 ) {
@@ -83,7 +70,7 @@ fun Home(
             ) {
                 DrawerHeader(homeViewModel.getUserData())
                 DrawerBody(homeViewModel.getNavigationItems(),
-                    navController,
+                    navHostController,
                     onNavigationItemClicked = {
                         scope.launch {
                             drawerState.close()
@@ -130,15 +117,15 @@ fun Home(
                     )
             },
 
-            floatingActionButton = {
-                FloatingActionButton(onClick = {onClickAddNewNote()}) {
 
-                    Icon(imageVector = Icons.Filled.Add, contentDescription = "Search icon")
-                }
-            }
         ) { innerPadding ->
-            NoteList(innerPadding,onNoteListTileClick={onNoteListTileClick(it)})
+//            NoteList(innerPaddinng,onNoteListTileClick={onNoteListTileClick(it)})
+            Column(
+                Modifier.padding(innerPadding)
+            ) {
 
+            DocumentListScreen(navHostController =  navHostController)
+            }
         }
     }
 
@@ -283,7 +270,7 @@ fun HomePreview(
     Column {
 
         DrawerHeader(userData = UserData(
-            "","AMAN MAHTO","https://yt3.ggpht.com/ytc/AIf8zZRbmJuX7cIam3HsvgsbVY_BgyGt55TlujeKUao=s48-c-k-c0x00ffffff-no-rj-mo"
+            "","AMAN MAHTO","","https://yt3.ggpht.com/ytc/AIf8zZRbmJuX7cIam3HsvgsbVY_BgyGt55TlujeKUao=s48-c-k-c0x00ffffff-no-rj-mo"
         )
         )
 

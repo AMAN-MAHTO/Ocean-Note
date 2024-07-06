@@ -1,10 +1,10 @@
-package com.example.noteapp.services.impl
+package com.example.noteapp.note.data
 
 import android.util.Log
-import com.example.noteapp.models.Note
+import com.example.noteapp.note.domain.models.Note
 
-import com.example.noteapp.services.DatabaseClient
-import com.example.noteapp.services.GoogleAuthUiClient
+import com.example.noteapp.note.domain.repository.DatabaseClient
+import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -36,8 +36,6 @@ class FirebaseDatabaseClientImpl @Inject constructor(
 
         }
         Log.d(TAG, "userDB: $userDB")
-
-
 
     }
 
@@ -79,7 +77,7 @@ class FirebaseDatabaseClientImpl @Inject constructor(
     }
 
     override suspend fun getNoteById(id: String): Note? {
-        var note:Note? = null
+        var note: Note? = null
         notesCollectionReference?.let {
             try {
                 val querySnapshot= it.document(id).get().await()

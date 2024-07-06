@@ -1,4 +1,4 @@
-package com.example.noteapp.screens.sign_up
+package com.example.noteapp.auth.presentation.sign_up
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

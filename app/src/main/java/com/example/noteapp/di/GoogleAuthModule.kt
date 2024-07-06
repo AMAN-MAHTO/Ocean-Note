@@ -1,7 +1,7 @@
 package com.example.noteapp.di
 
 import android.content.Context
-import com.example.noteapp.services.GoogleAuthUiClient
+import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.google.android.gms.auth.api.identity.Identity
 import dagger.Module
 import dagger.Provides

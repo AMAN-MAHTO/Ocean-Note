@@ -1,5 +1,4 @@
-package com.example.bookofgiants.screens.sign_up
-
+package com.example.noteapp.auth.presentation.sign_in
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,19 +28,38 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.noteapp.R
-import com.example.noteapp.screens.sign_up.SignUpViewModel
-
+import kotlin.reflect.KFunction1
 
 @Composable
-fun SignUp(
-    viewModel: SignUpViewModel = hiltViewModel(),
+fun SignIn(
+    viewModel: SignInViewModel = hiltViewModel(),
     onGoogleSignIn: ()-> Unit,
-    onClickSignInText:(String)->Unit
+    onClickSignUpText: (String)->Unit
 ) {
     val email = viewModel.email.collectAsState()
     val password = viewModel.password.collectAsState()
-    val confimPassword = viewModel.confirmPassword.collectAsState()
+    val updateEmail = viewModel::updateEmail
+    val updatePassword = viewModel::updatePassword
+    val signIn = viewModel::signIn
+    val navigateSignUp = viewModel::navigateSignUp
+    SignInContent( email.value, password.value , updatePassword, updateEmail, signIn, navigateSignUp, onGoogleSignIn, onClickSignUpText)
 
+}
+
+@Composable
+fun SignInContent(
+
+    email: String,
+    password: String,
+    updatePassword: (it: String) -> Unit,
+    updateEmail: (it: String) -> Unit,
+    signIn: () -> Unit,
+    navigateSignUp: KFunction1<(String) -> Unit, Unit>,
+    onGoogleSignIn: () -> Unit,
+    onClickSignUpText: (String) -> Unit
+
+
+    ){
     Box(
         Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -49,7 +67,7 @@ fun SignUp(
         Column(
             Modifier.fillMaxWidth(.8f)
         ) {
-            Text(text = "Sign Up",
+            Text(text = "Sign In",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.fillMaxWidth(1f)
             )
@@ -58,49 +76,37 @@ fun SignUp(
 
             OutlinedTextField(
                 singleLine = true,
-                value = email.value,
+                value = email,
                 label = { Text(text = "Email") },
                 modifier = Modifier.fillMaxWidth(1f),
-                onValueChange = {
-                    viewModel.updateEmail(it)
-                })
+                onValueChange = updateEmail
+                )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                value = password.value,
+                value = password,
                 label = { Text(text = "Password") },
                 modifier = Modifier.fillMaxWidth(1f),
-                onValueChange = {
-                    viewModel.updatePassword(it)
-                })
+                onValueChange = updatePassword)
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                value = confimPassword.value,
-                label = { Text(text = "Confirm Password") },
-                modifier = Modifier.fillMaxWidth(1f),
-                onValueChange = {
-                    viewModel.updateConfirmPassword(it)
-                })
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {viewModel.signUp()},
+                onClick = signIn,
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth(1f)
 
             ) {
-                Text(text = "Sign Up")
+                Text(text = "Sign In")
             }
+            Spacer(modifier = Modifier.height(4.dp))
+
             Button(
-                onClick = {onGoogleSignIn()},
+                onClick = onGoogleSignIn,
                 shape = MaterialTheme.shapes.small,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -130,7 +136,8 @@ fun SignUp(
 
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Already have a account? Sign In",
+
+            Text(text = "Don't have a account? Sign Up",
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -138,21 +145,20 @@ fun SignUp(
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
-                    )  { viewModel.navigateSignIn(onClickSignInText) }
+                    ) { navigateSignUp(onClickSignUpText) }
             )
 
 
         }
     }
-
 }
 
 
 
 @Preview(showBackground = true)
 @Composable
-fun previewSignUp() {
-    SignUp(onGoogleSignIn = {}){
+fun previewSignIn() {
+    SignIn(onGoogleSignIn = {}){
     }
 
 }

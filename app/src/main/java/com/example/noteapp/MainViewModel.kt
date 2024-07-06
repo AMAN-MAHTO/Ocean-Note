@@ -7,18 +7,26 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.noteapp.screens.sign_in.SignInViewModel
-import com.example.noteapp.services.GoogleAuthUiClient
+import androidx.navigation.NavHostController
+import com.example.noteapp.auth.presentation.sign_in.SignInViewModel
+import com.example.noteapp.auth.data.GoogleAuthUiClient
+import com.example.noteapp.auth.domain.model.copyUser
+import com.example.noteapp.auth.domain.repository.UserDatabaseClient
+
+
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.reflect.KFunction0
+
 val TAG = "MainViewModel"
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    googleAuthUiClient: GoogleAuthUiClient
+    private val googleAuthUiClient: GoogleAuthUiClient,
+    private val userDatabaseClient: UserDatabaseClient,
+
 ):ViewModel() {
 
     private val _startDestination = MutableStateFlow(Screen.SignIn.route)
@@ -31,7 +39,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             if(googleAuthUiClient.getSignedInUser() != null){
 
-                _startDestination.value = Screen.Home.route
+                _startDestination.value = Screen.DocumentList.route
             }else{
                 _startDestination.value = Screen.SignIn.route
             }
@@ -49,10 +57,12 @@ class MainViewModel @Inject constructor(
         signInViewModel: SignInViewModel
     ){
         viewModelScope.launch {
-            val signInResult = googleAuthUiClient.signInWithIntent(
+            googleAuthUiClient.signInWithIntent(
                 intent = data ?: return@launch
-            )
-            signInViewModel.onSignInResult(signInResult)
+            ) {
+
+            signInViewModel.onSignInResult(it)
+            }
         }
 
     }
@@ -71,7 +81,6 @@ class MainViewModel @Inject constructor(
             )
         }
     }
-
 
 
 

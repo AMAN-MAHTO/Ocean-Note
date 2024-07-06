@@ -10,10 +10,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noteapp.EDIT_NOTE_ARGUMENT_ID
-import com.example.noteapp.models.Note
+import com.example.noteapp.note.domain.models.Note
 
-import com.example.noteapp.services.DatabaseClient
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.example.noteapp.note.domain.repository.DatabaseClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

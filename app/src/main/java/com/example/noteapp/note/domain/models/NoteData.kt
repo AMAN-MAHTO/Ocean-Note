@@ -1,4 +1,6 @@
-package com.example.noteapp.models
+package com.example.noteapp.note.domain.models
+
+import com.google.type.DateTime
 
 data class Notes(
     val id : Int,
@@ -18,4 +20,9 @@ data class Note(
 //    val createdDate: String = "",
 //    var updatedDate:String = ""
 //)
+
+
+
+
+
 

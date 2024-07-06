@@ -1,6 +1,7 @@
 package com.example.noteapp
 
 import android.app.Activity.RESULT_OK
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -15,14 +16,17 @@ import androidx.navigation.navArgument
 import com.example.bookofgiants.screens.sign_up.SignUp
 import com.example.noteapp.screens.home.Home
 import com.example.noteapp.screens.note.Note
-import com.example.noteapp.screens.sign_in.SignIn
-import com.example.noteapp.screens.sign_in.SignInViewModel
-import com.example.noteapp.services.GoogleAuthUiClient
-
+import com.example.noteapp.auth.presentation.sign_in.SignIn
+import com.example.noteapp.auth.presentation.sign_in.SignInViewModel
+import com.example.noteapp.auth.data.GoogleAuthUiClient
+import com.example.noteapp.auth.domain.repository.UserDatabaseClient
+import com.example.noteapp.note.presentation.DocumentListScreen
+import com.example.noteapp.note.presentation.DocumentScreen
+import kotlin.math.log
 
 
 @Composable
-fun NavGraph(navController: NavHostController,
+fun NavGraph(navHostController: NavHostController,
              googleAuthUiClient: GoogleAuthUiClient,
              signInViewModel: SignInViewModel = hiltViewModel(),
              mainViewModel: MainViewModel = hiltViewModel()
@@ -41,7 +45,7 @@ fun NavGraph(navController: NavHostController,
 
         })
     NavHost(
-        navController = navController,
+        navController = navHostController,
         startDestination = mainViewModel.startDestinatioon.value
     ) {
 
@@ -54,11 +58,14 @@ fun NavGraph(navController: NavHostController,
             // if the google sign_in is successful
             LaunchedEffect(key1 = state.isSignInSuccessful){
                 if(state.isSignInSuccessful){
-                    navController.popBackStack()
-                    navController.navigate(Screen.Home.route)
+                    Log.d("SignIn", "NavGraph: navigating, signInsuccessful")
+                    navHostController.popBackStack()
+                    navHostController.navigate(Screen.DocumentList.route)
                     signInViewModel.resetState()
-                }
+                    }
+
             }
+
 
 
             SignIn(
@@ -66,8 +73,8 @@ fun NavGraph(navController: NavHostController,
                     mainViewModel.googleSignIntentLauncher(launcher, googleAuthUiClient)
                 },
                 onClickSignUpText = {
-                    navController.popBackStack()
-                    navController.navigate(it)
+                    navHostController.popBackStack()
+                    navHostController.navigate(it)
                 }
             )
         }
@@ -75,20 +82,39 @@ fun NavGraph(navController: NavHostController,
             Screen.SignUp.route
         ){
             // if the google sign_in is successful
+            // if the google sign_in is successful
             LaunchedEffect(key1 = state.isSignInSuccessful){
                 if(state.isSignInSuccessful){
-                    navController.popBackStack()
-                    navController.navigate(Screen.Home.route)
+                    Log.d("SignIn", "NavGraph: navigating, signInsuccessful")
+                    navHostController.popBackStack()
+                    navHostController.navigate(Screen.DocumentList.route)
                     signInViewModel.resetState()
                 }
+
             }
+//            LaunchedEffect(key1 = state.isSignInSuccessful){
+//                if(state.isSignInSuccessful){
+//                    if (state.isNewUser){
+//                        Log.d("SignIn", "NavGraph: createCopyUser call")
+////                        signInViewModel.createCopyUserOnSignUp()
+//                            navHostController.popBackStack()
+//                            navHostController.navigate(Screen.DocumentList.route)
+//                            signInViewModel.resetState()
+//
+//                    }else{
+//                    navHostController.popBackStack()
+//                    navHostController.navigate(Screen.Home.route)
+//                    signInViewModel.resetState()
+//                    }
+//                }
+//            }
             SignUp(
                 onGoogleSignIn = {
                     mainViewModel.googleSignIntentLauncher(launcher, googleAuthUiClient)
                 },
                 onClickSignInText = {
-                navController.popBackStack()
-                navController.navigate(it)
+                navHostController.popBackStack()
+                navHostController.navigate(it)
             }
             )
         }
@@ -101,22 +127,38 @@ fun NavGraph(navController: NavHostController,
             // by default this argument get stored at two place NavBackStackEntry and SavedStateHandle
             // thourgh SavedSateHandle we can access this argument is viewModel
             Note(onEditBackIconClickNavigation = {
-                navController.popBackStack()
-                navController.navigate(Screen.Home.route)
+                navHostController.popBackStack()
+                navHostController.navigate(Screen.Home.route)
             })
         }
 
         composable(
             Screen.Home.route
         ){
-            Home(navController = navController,
+            Home(navHostController = navHostController,
                 onNoteListTileClick = {
-                    navController.navigate(Screen.EditNote.setId(it))
+                    navHostController.navigate(Screen.EditNote.setId(it))
                 },
                 onClickAddNewNote = {
-                    navController.navigate(Screen.EditNote.setId())
+                    navHostController.navigate(Screen.EditNote.setId())
                 }
             )
+        }
+
+        composable(
+            Screen.Document.route,
+            arguments = listOf( navArgument(DOCUMENT_SCREEN_ARGUMENT_ID){defaultValue = ""})
+        ){
+            DocumentScreen(
+                onClickBack = navHostController::popBackStack,
+                navHostController = navHostController
+            )
+        }
+
+        composable(
+            Screen.DocumentList.route
+        ){
+            DocumentListScreen(navHostController = navHostController)
         }
 
     }

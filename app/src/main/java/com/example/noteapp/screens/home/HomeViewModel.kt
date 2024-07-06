@@ -16,9 +16,9 @@ import androidx.compose.material.icons.outlined.Sync
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noteapp.Screen
-import com.example.noteapp.services.GoogleAuthUiClient
-import com.example.noteapp.models.UserData
-import com.example.noteapp.services.DatabaseClient
+import com.example.noteapp.auth.data.GoogleAuthUiClient
+import com.example.noteapp.auth.domain.model.UserData
+import com.example.noteapp.note.domain.repository.DatabaseClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
