@@ -15,19 +15,22 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+
 val TAG = "FirebaseDBImpl"
+
 class FirebaseFirestoreClientImpl @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient,
     db: FirebaseFirestore,
 
-): DatabaseClient2 {
+    ) : DatabaseClient2 {
     private var documentsCollectionReference: CollectionReference? = null
     private var sharedCollectionReference: CollectionReference? = null
     private var userCollectionReference: CollectionReference? = null
     private var userData: UserData? = null
+
     init {
         userData = googleAuthUiClient.getSignedInUser()
-        if(userData != null){
+        if (userData != null) {
 
             documentsCollectionReference = db.collection("documents")
             sharedCollectionReference = db.collection("shared")
@@ -55,10 +58,10 @@ class FirebaseFirestoreClientImpl @Inject constructor(
     override suspend fun deleteDocumentById(docId: String) {
         try {
 
-        documentsCollectionReference?.let {
-            it.document(docId).delete().await()
-        }
-        }catch (e: Exception){
+            documentsCollectionReference?.let {
+                it.document(docId).delete().await()
+            }
+        } catch (e: Exception) {
             Log.d("Document", "deleteDocumentById: ERROR $e")
         }
     }
@@ -74,42 +77,46 @@ class FirebaseFirestoreClientImpl @Inject constructor(
             ).await()
         }
     }
+
     override suspend fun addShared(shared: Shared): String {
         var sharedId = ""
         try {
 
-        sharedCollectionReference?.let {
-            sharedId = it.add(shared.copy(
-                createdBy = userData!!.userId,
-                createdAt = System.currentTimeMillis(),
-            )).await().id
-        }
-        sharedCollectionReference?.let {
-            it.document(sharedId).update(
-                mapOf(
-                    "id" to sharedId
-                )
-            ).await()
-        }
-        }catch(e: Exception) {
+            sharedCollectionReference?.let {
+                sharedId = it.add(
+                    shared.copy(
+                        createdBy = userData!!.userId,
+                        createdAt = System.currentTimeMillis(),
+                    )
+                ).await().id
+            }
+            sharedCollectionReference?.let {
+                it.document(sharedId).update(
+                    mapOf(
+                        "id" to sharedId
+                    )
+                ).await()
+            }
+        } catch (e: Exception) {
             Log.d(TAG, "failed to add shared", e)
         }
         // adding share id in document share list
         try {
 
-        documentsCollectionReference?.let {collectionRefrence->
-            collectionRefrence.document(shared.documentId).get().await().toObject<Document>()?.let {
-                val list =   it.sharedIdList.toMutableList()
-                list.add(sharedId)
-            collectionRefrence.document(shared.documentId).update(
-                mapOf(
-                    "sharedIdList" to list
-                )
-            ).await()
-            }
+            documentsCollectionReference?.let { collectionRefrence ->
+                collectionRefrence.document(shared.documentId).get().await().toObject<Document>()
+                    ?.let {
+                        val list = it.sharedIdList.toMutableList()
+                        list.add(sharedId)
+                        collectionRefrence.document(shared.documentId).update(
+                            mapOf(
+                                "sharedIdList" to list
+                            )
+                        ).await()
+                    }
 
-        }
-        }catch(e: Exception) {
+            }
+        } catch (e: Exception) {
             Log.d(TAG, "failed to adding share id in document share list", e)
         }
         return sharedId
@@ -117,7 +124,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
 
     override suspend fun addEditor(document: Document) {
         try {
-            documentsCollectionReference?.let { docRef->
+            documentsCollectionReference?.let { docRef ->
                 docRef.document(document.id).get().await().toObject<Document>()?.let {
                     val editor = it.currentEditors.toMutableList()
                     editor.add(userData!!.userId)
@@ -128,13 +135,14 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                     )
                 }
             }
-        }catch(e: Exception) {
+        } catch (e: Exception) {
             Log.d(TAG, "failed ", e)
         }
     }
-    override suspend fun removeEditor(document: Document, listener:()->Unit) {
+
+    override suspend fun removeEditor(document: Document, listener: () -> Unit) {
         try {
-            documentsCollectionReference?.let { docRef->
+            documentsCollectionReference?.let { docRef ->
                 docRef.document(document.id).get().await().toObject<Document>()?.let {
                     val editor = it.currentEditors.toMutableList()
                     editor.remove(userData!!.userId)
@@ -143,12 +151,12 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                             "currentEditors" to editor
                         )
                     )
-                    if(editor.isEmpty()){
+                    if (editor.isEmpty()) {
                         listener()
                     }
                 }
             }
-        }catch(e: Exception) {
+        } catch (e: Exception) {
             Log.d(TAG, "failed ", e)
 
         }
@@ -156,30 +164,32 @@ class FirebaseFirestoreClientImpl @Inject constructor(
 
     override suspend fun addVersion(document: Document) {
     }
+
     override suspend fun getSharedCard(docId: String, listener: (Shared) -> Unit) {
         sharedCollectionReference?.let {
             try {
-                it.whereEqualTo("documentId", docId).whereEqualTo("sharedWith",userData!!.email).addSnapshotListener{
-                    snapshot, e ->
-                    if (e != null) {
-                        Log.w(TAG, "Listen failed.", e)
-                        return@addSnapshotListener
+                it.whereEqualTo("documentId", docId).whereEqualTo("sharedWith", userData!!.email)
+                    .addSnapshotListener { snapshot, e ->
+                        if (e != null) {
+                            Log.w(TAG, "Listen failed.", e)
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null && !snapshot.isEmpty) {
+                            snapshot.documents.forEach {
+                                it.toObject<Shared>()?.let(listener)
+                            }
+                        }
                     }
-                    if (snapshot != null && !snapshot.isEmpty) {
-                    snapshot.documents.forEach {
-                        it.toObject<Shared>()?.let(listener)
-                    }
-                    }
-                }
-            }catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.d(TAG, "failed to get sharedCard", e)
             }
         }
     }
+
     override suspend fun getRealtimeDocumentOwned(listener: (List<Document>) -> Unit) {
         documentsCollectionReference?.let {
             try {
-                it.whereEqualTo("ownerId",userData!!.userId).addSnapshotListener { snapshot, e ->
+                it.whereEqualTo("ownerId", userData!!.userId).addSnapshotListener { snapshot, e ->
                     val result = mutableListOf<Document>()
                     if (e != null) {
                         Log.w(TAG, "Listen failed.", e)
@@ -187,7 +197,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                     }
                     if (snapshot != null && !snapshot.isEmpty) {
 
-                        snapshot.documents.forEach {documentSnapshot->
+                        snapshot.documents.forEach { documentSnapshot ->
 
                             documentSnapshot.toObject<Document>()?.let { result.add(it) }
 
@@ -198,7 +208,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                     }
                     listener(result)
                 }
-            }catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.d(TAG, "failed to get RealtimeDocumentOwned", e)
             }
         }
@@ -214,50 +224,59 @@ class FirebaseFirestoreClientImpl @Inject constructor(
             try {
                 val currentUserSharedDocumentIdList = mutableListOf<String>()
                 val currentUserSharedCardList = mutableListOf<Shared>()
-                it.whereEqualTo("sharedWith",userData!!.email).addSnapshotListener{ snapshot, e->
-                    if(e != null){
+                it.whereEqualTo("sharedWith", userData!!.email).addSnapshotListener { snapshot, e ->
+                    if (e != null) {
                         Log.d("Document", "listern Failed: $e")
                         return@addSnapshotListener
                     }
-                    if(snapshot != null){
-                        snapshot.documents.forEach{
+                    if (snapshot != null) {
+                        currentUserSharedDocumentIdList.clear()
+                        currentUserSharedCardList.clear()
+                        snapshot.documents.forEach {
                             it.toObject<Shared>()?.let {
                                 currentUserSharedDocumentIdList.add(it.documentId)
                                 currentUserSharedCardList.add(it)
                             }
                         }
                     }
-                    Log.d("Document", "getRealtimeDocumentShared: shared document list: $currentUserSharedDocumentIdList")
+                    Log.d(
+                        "Document",
+                        "getRealtimeDocumentShared: shared document list: $currentUserSharedDocumentIdList"
+                    )
                     sharedListner(currentUserSharedCardList)
-                    if(currentUserSharedDocumentIdList.isNotEmpty())
-                    documentsCollectionReference?.let {
-                        val sharedDocument = mutableListOf<Document>()
-                        try {
+                    if (currentUserSharedDocumentIdList.isNotEmpty())
+                        documentsCollectionReference?.let {
+                            val sharedDocument = mutableListOf<Document>()
+                            try {
 
-                            it.whereIn("id",currentUserSharedDocumentIdList).addSnapshotListener{
-                                    snapshot, e ->
-                                if(e != null){
-                                    Log.d("Document", "listern Failed: $e")
-                                    return@addSnapshotListener
-                                }
-                                if(snapshot != null){
-                                    snapshot.documents.forEach{
-                                        it.toObject<Document>()?.let{
-
-                                            sharedDocument.add(it)
+                                it.whereIn("id", currentUserSharedDocumentIdList)
+                                    .addSnapshotListener { snapshot, e ->
+                                        if (e != null) {
+                                            Log.d("Document", "listern Failed: $e")
+                                            return@addSnapshotListener
                                         }
+                                        if (snapshot != null) {
+                                            sharedDocument.clear()
+                                            snapshot.documents.forEach {
+                                                it.toObject<Document>()?.let {
 
+                                                    sharedDocument.add(it)
+                                                }
+
+                                            }
+                                        }
+                                        Log.d(
+                                            "Document",
+                                            "getRealtimeDocumentShared: document : $sharedDocument"
+                                        )
+                                        docListner(sharedDocument)
                                     }
-                                }
-                                Log.d("Document", "getRealtimeDocumentShared: document : $sharedDocument")
-                                docListner(sharedDocument)
+                            } catch (e: Exception) {
+                                Log.d(TAG, "failed to get RealtimeDocumentShared", e)
                             }
-                        }catch(e: Exception) {
-                            Log.d(TAG, "failed to get RealtimeDocumentShared", e)
                         }
-                    }
                 }
-            }catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.d(TAG, "failed to get shared", e)
             }
 
@@ -265,57 +284,60 @@ class FirebaseFirestoreClientImpl @Inject constructor(
     }
 
     // it get all the user that the given document is shared with
-    override suspend fun getRealtimeShareHolderOfGivenDocument(docId: String,listener: (shareHolderList:List<ShareHolder>)->Unit){
+    override suspend fun getRealtimeShareHolderOfGivenDocument(
+        docId: String,
+        listener: (shareHolderList: List<ShareHolder>) -> Unit
+    ) {
         sharedCollectionReference?.let {
             try {
                 val shared = mutableListOf<Shared>()
                 val sharedEmailList = mutableListOf<String>()
                 val shareHolderList = mutableListOf<ShareHolder>()
-                it.whereEqualTo("documentId",docId).addSnapshotListener{
-                    snapshot, e->
-                    if(e != null){
+                it.whereEqualTo("documentId", docId).addSnapshotListener { snapshot, e ->
+                    if (e != null) {
                         Log.e("Document", "listern Failed: $e")
                         return@addSnapshotListener
                     }
-                    if(snapshot != null) {
-                        snapshot.documents.forEach{
+                    if (snapshot != null) {
+                        snapshot.documents.forEach {
                             it.toObject<Shared>()?.let {
                                 shared.add(it)
                                 sharedEmailList.add(it.sharedWith)
                             }
 
-                    }
-                        if(sharedEmailList.isNotEmpty()){
-                        userCollectionReference?.let {
-                            it.whereIn("email" , sharedEmailList).addSnapshotListener{
-                                snapshot, e->
-                                if(e != null){
-                                    Log.e("Document", "listern Failed: $e")
-                                    return@addSnapshotListener
-                                }
-                                snapshot?.documents?.forEach { documentSnapshot ->
-                                    documentSnapshot.toObject<copyUser>()?.let {copyUser->
-                                        val shared = shared.first {
-                                            it.sharedWith == (copyUser.email ?: "")
+                        }
+                        if (sharedEmailList.isNotEmpty()) {
+                            userCollectionReference?.let {
+                                it.whereIn("email", sharedEmailList)
+                                    .addSnapshotListener { snapshot, e ->
+                                        if (e != null) {
+                                            Log.e("Document", "listern Failed: $e")
+                                            return@addSnapshotListener
                                         }
-                                        shareHolderList.add(
-                                            ShareHolder(
-                                                sharedId = shared.id,
-                                                email = copyUser.email ?: "",
-                                                profilePic = copyUser.profilePic ?: "",
-                                                documentId = shared.documentId,
-                                                permissionType = shared.permissionType
-                                            )
-                                        )
+                                        snapshot?.documents?.forEach { documentSnapshot ->
+                                            documentSnapshot.toObject<copyUser>()?.let { copyUser ->
+                                                val shared = shared.first {
+                                                    it.sharedWith == (copyUser.email ?: "")
+                                                }
+                                                shareHolderList.add(
+                                                    ShareHolder(
+                                                        sharedId = shared.id,
+                                                        email = copyUser.email ?: "",
+                                                        profilePic = copyUser.profilePic ?: "",
+                                                        documentId = shared.documentId,
+                                                        permissionType = shared.permissionType
+                                                    )
+                                                )
+                                            }
+                                        }
+                                        listener(shareHolderList)
                                     }
-                                }
-                                listener(shareHolderList)
                             }
-                        }}
+                        }
                     }
 
                 }
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 Log.e("Document", "getRealtimeShareHolderOfGivenDocument: $e")
             }
         }
@@ -330,43 +352,41 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                     )
                 )
             }
-        }catch (e: Exception){
+        } catch (e: Exception) {
             Log.e(TAG, "updateSharedPermission: error $e")
         }
     }
 
 
-
-
-    override suspend fun getRealtimeDocumentById(id: String,listener: (Document)->Unit) {
+    override suspend fun getRealtimeDocumentById(id: String, listener: (Document) -> Unit) {
         documentsCollectionReference?.let {
             try {
 
-            it.whereEqualTo("id", id).addSnapshotListener{
-                snapshot, e ->
-                if(e != null){
-                    Log.d("Document", "listern Failed: $e")
-                    return@addSnapshotListener
-                }
-                if(snapshot != null){
-                    snapshot.documents.forEach{
-                        it.toObject<Document>()?.let(listener)
+                it.whereEqualTo("id", id).addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.d("Document", "listern Failed: $e")
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null) {
+                        snapshot.documents.forEach {
+                            it.toObject<Document>()?.let(listener)
+                        }
                     }
                 }
-            }
-            }catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.d(TAG, "failed to get doc", e)
             }
         }
     }
 
-    override suspend fun getRealtimeSearch(query: String,listener: (List<copyUser>) -> Unit){
+    override suspend fun getRealtimeSearch(query: String, listener: (List<copyUser>) -> Unit) {
         userCollectionReference?.let {
             try {
-                it.whereGreaterThanOrEqualTo("email",query).whereLessThanOrEqualTo("email",query+"~")
+                it.whereGreaterThanOrEqualTo("email", query)
+                    .whereLessThanOrEqualTo("email", query + "~")
                     .get().await().let {
                         val result = mutableListOf<copyUser>()
-                        it.documents.forEach{
+                        it.documents.forEach {
                             it.toObject<copyUser>()?.let {
                                 result.add(it)
                             }
@@ -376,7 +396,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                         listener(result)
                     }
 
-            }catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.e("Search", "failed to get search user", e)
             }
         }

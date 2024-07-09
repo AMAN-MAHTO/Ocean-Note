@@ -62,10 +62,13 @@ class DocumentViewModel @Inject constructor(
                             }
 
                             rdbClient.getRealtimeEditorRealm(document) { editorRealmChild ->
-                                _state.value.document = _state.value.document.copy(
-                                    title = editorRealmChild.title,
-                                    body = editorRealmChild.body,
-                                    currentEditors = editorRealmChild.currentEditors,
+                                _state.value = _state.value.copy(
+                                    document = _state.value.document.copy(
+
+                                        title = editorRealmChild.title,
+                                        body = editorRealmChild.body,
+                                        currentEditors = editorRealmChild.currentEditors,
+                                    )
                                 )
                             }
 
@@ -161,10 +164,10 @@ class DocumentViewModel @Inject constructor(
         viewModelScope.launch {
 
             if (_isEditorAdded) {
-
+                dbClient.updateDocument(_state.value.document)
+                rdbClient.removeEditorRealmListener(_state.value.document)
                 dbClient.removeEditor(_state.value.document) {
                     viewModelScope.launch {
-                        dbClient.updateDocument(_state.value.document)
                         dbClient.addVersion(_state.value.document)
                         rdbClient.removeEditorRealm(_state.value.document)
                     }

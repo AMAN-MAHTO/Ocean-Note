@@ -16,7 +16,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
 var TAG1 = "FirebaseRDB"
+
 class FirebaseDatabaseClientImpl @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient,
     rdb: FirebaseDatabase
@@ -25,46 +27,51 @@ class FirebaseDatabaseClientImpl @Inject constructor(
     private var userData: UserData? = null
     private var documentCollectionRef: DatabaseReference? = null
     private var editorRealmRef: DatabaseReference? = null
+    private var editorRealmListener: ValueEventListener? = null
+
     init {
         userData = googleAuthUiClient.getSignedInUser()
-        if(userData != null){
+        if (userData != null) {
             documentCollectionRef = rdb.getReference("Version")
             editorRealmRef = rdb.getReference("Editor_Realm")
 
         }
 
     }
+
     override suspend fun addDocument(document: Document): String {
         var docId = ""
         Log.d(TAG1, "addDocument: ")
         try {
-            documentCollectionRef?.let {dbRef->
+            documentCollectionRef?.let { dbRef ->
                 dbRef.push().key?.let {
                     docId = it
                     Log.d(TAG1, "addDocument: $it")
 
-               dbRef.child(it).setValue(document.copy(
-                   id = it,
-                   ownerId = userData!!.userId,
-                   updatedAt = System.currentTimeMillis(),
-                   createdAt = System.currentTimeMillis(),
-               ))
-                       .addOnFailureListener {
-                        Log.d(TAG1, "addDocument: $it")
+                    dbRef.child(it).setValue(
+                        document.copy(
+                            id = it,
+                            ownerId = userData!!.userId,
+                            updatedAt = System.currentTimeMillis(),
+                            createdAt = System.currentTimeMillis(),
+                        )
+                    )
+                        .addOnFailureListener {
+                            Log.d(TAG1, "addDocument: $it")
 
-                       }.addOnSuccessListener {
-                       Log.d(TAG1, "addDocument: sucess")
+                        }.addOnSuccessListener {
+                            Log.d(TAG1, "addDocument: sucess")
 
 
-                   }
+                        }
 
                     dbRef.child(it).child("sharedIdList").setValue("")
                     dbRef.child(it).child("currentEditors").setValue("")
 
                 }
             }
-        }catch (e:Exception){
-            Log.e(TAG1, "addDocument: $e", )
+        } catch (e: Exception) {
+            Log.e(TAG1, "addDocument: $e")
         }
         return docId
 
@@ -81,8 +88,8 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                     )
                 )
             }
-        }catch (e:Exception){
-            Log.e(TAG1, "addDocument: $e", )
+        } catch (e: Exception) {
+            Log.e(TAG1, "addDocument: $e")
         }
     }
 
@@ -91,9 +98,10 @@ class FirebaseDatabaseClientImpl @Inject constructor(
             documentCollectionRef?.let {
                 it.child(_docId).removeValue()
             }
-        }catch (e:Exception){
-            Log.e(TAG1, "addDocument: $e", )
-        }    }
+        } catch (e: Exception) {
+            Log.e(TAG1, "addDocument: $e")
+        }
+    }
 
     override suspend fun updateDocumentVersion(document: Document) {
         try {
@@ -102,12 +110,12 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                     document
                 )
             }
-        }catch(e: Exception){
+        } catch (e: Exception) {
             Log.e(TAG1, "updateDocumentVersion: $e")
         }
     }
 
-    override suspend fun getLatestVersion(document: Document,listener: ()->Unit) {
+    override suspend fun getLatestVersion(document: Document, listener: () -> Unit) {
         try {
             documentCollectionRef?.let {
                 it.child(document.id).get().let {
@@ -115,25 +123,26 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                     listener()
                 }
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "getLatestVersion: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "getLatestVersion: $e")
         }
     }
+
 
     override suspend fun removeVersion(document: Document) {
         try {
             documentCollectionRef?.let {
                 it.child(document.id).removeValue()
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "removeVersion: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "removeVersion: $e")
         }
     }
 
-    override suspend fun getRealtimeVersion(id: String, listener: (Document) -> Unit){
+    override suspend fun getRealtimeVersion(id: String, listener: (Document) -> Unit) {
         try {
             documentCollectionRef?.let {
-                it.child(id).addValueEventListener(object : ValueEventListener{
+                editorRealmListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         snapshot.getValue(Document::class.java)?.let { it1 -> listener(it1) }
                     }
@@ -143,10 +152,11 @@ class FirebaseDatabaseClientImpl @Inject constructor(
 
                     }
 
-                })
+                }
+                it.child(id).addValueEventListener(editorRealmListener as ValueEventListener)
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "getRealtimeVersion: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "getRealtimeVersion: $e")
         }
     }
 
@@ -157,30 +167,40 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                     mapOf(
                         "id" to document.id,
                         "title" to document.title,
-                         "body" to document.body,
+                        "body" to document.body,
                         "currentEditors" to document.currentEditors,
                         "updateAt" to document.updatedAt,
                     )
                 )
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "createEditorRealm: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "createEditorRealm: $e")
         }
     }
 
     override suspend fun removeEditorRealm(document: Document) {
         try {
 
-
             editorRealmRef?.let {
+                removeEditorRealmListener(document)
                 it.child(document.id).removeValue()
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "removeEditorRelam: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "removeEditorRelam: $e")
         }
     }
 
-    override suspend fun updateEditorRealm(editorRelamChild: EditorRelamChild){
+    override suspend fun removeEditorRealmListener(document: Document) {
+        editorRealmListener?.let { listener ->
+            documentCollectionRef?.let {
+                it.child(document.id).removeEventListener(listener)
+                editorRealmListener = null
+            }
+        }
+    }
+
+
+    override suspend fun updateEditorRealm(editorRelamChild: EditorRelamChild) {
         try {
             editorRealmRef?.let {
                 it.child(editorRelamChild.id).updateChildren(
@@ -193,25 +213,33 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                         )
                 )
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "updateEditorRealm: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "updateEditorRealm: $e")
         }
     }
 
-    override suspend fun getRealtimeEditorRealm(document: Document, listener: (EditorRelamChild) -> Unit) {
+    override suspend fun getRealtimeEditorRealm(
+        document: Document,
+        listener: (EditorRelamChild) -> Unit
+    ) {
         try {
             editorRealmRef?.let {
 
                 it.child(document.id).addValueEventListener(
                     object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
-                            if(snapshot.exists()){
+                            if (snapshot.exists()) {
+                                Log.d(TAG1, "onDataChange: $snapshot")
+                                snapshot.getValue(EditorRelamChild::class.java)
+                                    ?.let { it1 ->
+                                        Log.d(TAG1, "onDataChange: $it1")
+                                        listener(it1)
+                                    }
+                            } else {
+                                Log.d(TAG1, "onDataChange: ")
 
-                            snapshot.getValue(EditorRelamChild::class.java)
-                                ?.let { it1 -> listener(it1) }
-                            }else{
                                 CoroutineScope(Dispatchers.IO).launch {
-                                createEditorRealm(document)
+                                    createEditorRealm(document)
                                 }
                             }
                         }
@@ -224,8 +252,8 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                     }
                 )
             }
-        }catch (e: Exception){
-            Log.e(TAG1, "getRealtimeEditorRealm: $e" )
+        } catch (e: Exception) {
+            Log.e(TAG1, "getRealtimeEditorRealm: $e")
         }
     }
 
