@@ -1,5 +1,6 @@
 package com.example.noteapp.note.domain.repository
 
+import com.example.noteapp.Permission
 import com.example.noteapp.auth.domain.model.copyUser
 import com.example.noteapp.note.domain.models.Document
 import com.example.noteapp.note.domain.models.ShareHolder
@@ -24,4 +25,9 @@ interface DatabaseClient2 {
         docId: String,
         listener: (shareHolderList:List<ShareHolder>) -> Unit
     )
+
+    suspend fun updateSharedPermission(shareHolder: ShareHolder, permission: Permission)
+    suspend  fun addEditor(document: Document)
+    suspend fun removeEditor(document: Document, listener:()->Unit)
+    suspend fun addVersion(document: Document)
 }

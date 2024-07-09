@@ -1,6 +1,7 @@
 package com.example.noteapp.note.presentation.component
 
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,7 @@ import com.example.noteapp.note.domain.repository.DatabaseClient2
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,8 +30,16 @@ class ShareDialogViewModel @Inject constructor(
     val docId = _docId.asStateFlow()
     fun onQueryChange(s: String) {
         _state.value = _state.value.copy(
-            query = s
+            query = s,
+
         )
+        if(s.isEmpty()){
+            _state.value = _state.value.copy(
+                query = s,
+                result = emptyList()
+                )
+        }else{
+
         viewModelScope.launch {
             dbClient.getRealtimeSearch(_state.value.query){
                 _state.value = _state.value.copy(
@@ -37,6 +47,7 @@ class ShareDialogViewModel @Inject constructor(
                 )
             }
             Log.d("Search", "onQueryChange: ${_state.value}")
+        }
         }
     }
     fun onClickResultElement(element: copyUser?) {
@@ -55,27 +66,39 @@ class ShareDialogViewModel @Inject constructor(
         }
 
     }
-    fun onClickShare() {
+    fun onClickShare(onDismissRequest: () -> Unit) {
         viewModelScope.launch {
             if(_state.value.selectedElement.email != null){
-            dbClient.addShared(Shared(
-                sharedWith = _state.value.selectedElement.email!!,
-                documentId = _docId.value ?:"",
-                permissionType = _state.value.permissionType.toString(),
-            ))
-            _state.value = ShareDialogState()
+                dbClient.addShared(Shared(
+                    sharedWith = _state.value.selectedElement.email!!,
+                    documentId = _docId.value ?:"",
+                    permissionType = _state.value.permissionType.toString(),
+                ))
+                _state.value = ShareDialogState()
+                onDismissRequest()
+
         }}
     }
 
     fun onClickSelecteElementClose() {
         _state.value = _state.value.copy(
             selectedElement = copyUser(),
-            query = ""
+            query = "",
+            result = emptyList()
         )
     }
 
     fun onClickDropDownPermission(shareHolder: ShareHolder, permission: Permission) {
+        viewModelScope.launch {
 
+        dbClient.updateSharedPermission(shareHolder, permission)
+        }
+    }
+
+    fun changeStatePermission(permission: Permission) {
+_state.value = _state.value.copy(
+    permissionType = permission
+)
     }
 
     private val _state = MutableStateFlow(ShareDialogState())
@@ -92,6 +115,7 @@ class ShareDialogViewModel @Inject constructor(
             }
             }
         }
+
     }
 
 }

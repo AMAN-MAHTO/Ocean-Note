@@ -1,14 +1,19 @@
 package com.example.noteapp.auth.presentation.sign_in
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -26,6 +31,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.noteapp.R
 import kotlin.reflect.KFunction1
@@ -41,8 +47,7 @@ fun SignIn(
     val updateEmail = viewModel::updateEmail
     val updatePassword = viewModel::updatePassword
     val signIn = viewModel::signIn
-    val navigateSignUp = viewModel::navigateSignUp
-    SignInContent( email.value, password.value , updatePassword, updateEmail, signIn, navigateSignUp, onGoogleSignIn, onClickSignUpText)
+    SignInContent( email.value, password.value , updatePassword, updateEmail, signIn, onGoogleSignIn, onClickSignUpText)
 
 }
 
@@ -54,55 +59,31 @@ fun SignInContent(
     updatePassword: (it: String) -> Unit,
     updateEmail: (it: String) -> Unit,
     signIn: () -> Unit,
-    navigateSignUp: KFunction1<(String) -> Unit, Unit>,
     onGoogleSignIn: () -> Unit,
     onClickSignUpText: (String) -> Unit
 
 
     ){
-    Box(
-        Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+
         Column(
-            Modifier.fillMaxWidth(.8f)
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
         ) {
-            Text(text = "Sign In",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.fillMaxWidth(1f)
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(text = "WELCOME",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.fillMaxWidth(1f),
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                singleLine = true,
-                value = email,
-                label = { Text(text = "Email") },
-                modifier = Modifier.fillMaxWidth(1f),
-                onValueChange = updateEmail
+            Spacer(modifier = Modifier.height(4.dp))
+            Image(painter = painterResource(id = R.drawable.note_png),
+                contentDescription = "",
                 )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                value = password,
-                label = { Text(text = "Password") },
-                modifier = Modifier.fillMaxWidth(1f),
-                onValueChange = updatePassword)
-
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = signIn,
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth(1f)
-
-            ) {
-                Text(text = "Sign In")
-            }
             Spacer(modifier = Modifier.height(4.dp))
 
             Button(
@@ -117,19 +98,26 @@ fun SignInContent(
 
 
             ) {
-                Box(
-                    Modifier.fillMaxWidth(1f)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth(1f)
+                        .align(Alignment.Bottom)
                 ) {
                     Icon(painter = painterResource(id = R.drawable.google_icon),
                         contentDescription = "",
                         tint = Color.Unspecified,
                         modifier = Modifier
                             .size(24.dp)
-                            .align(Alignment.TopStart)
+
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
 
 
-                    Text(text = "Sign in with Google", Modifier.align(Alignment.Center),
+                    Text(text = "Continue with Google",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(8.dp),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -137,19 +125,9 @@ fun SignInContent(
             }
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(text = "Don't have a account? Sign Up",
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .fillMaxWidth(1f)
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { navigateSignUp(onClickSignUpText) }
-            )
 
 
-        }
+
     }
 }
 
@@ -158,7 +136,14 @@ fun SignInContent(
 @Preview(showBackground = true)
 @Composable
 fun previewSignIn() {
-    SignIn(onGoogleSignIn = {}){
+    SignInContent(
+        email = "",
+        password = "",
+        updatePassword = {},
+        updateEmail = {},
+        signIn = { },
+        onGoogleSignIn = {  }) {
+        
     }
 
 }

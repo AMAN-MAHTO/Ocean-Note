@@ -1,151 +1,232 @@
 package com.example.noteapp.note.data
 
 import android.util.Log
-import com.example.noteapp.note.domain.models.Note
-
-import com.example.noteapp.note.domain.repository.DatabaseClient
 import com.example.noteapp.auth.data.GoogleAuthUiClient
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
-import kotlinx.coroutines.tasks.await
+import com.example.noteapp.auth.domain.model.UserData
+import com.example.noteapp.note.domain.models.Document
+import com.example.noteapp.note.domain.models.EditorRelamChild
+import com.example.noteapp.note.domain.repository.RealtimeDatabaseClient
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
-
-val TAG = "FIREBASE"
-
+var TAG1 = "FirebaseRDB"
 class FirebaseDatabaseClientImpl @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient,
-    db: FirebaseFirestore
-): DatabaseClient {
+    rdb: FirebaseDatabase
+) : RealtimeDatabaseClient {
 
-
-
-    private var userDB:DocumentReference? = null
-    private var notesCollectionReference: CollectionReference? = null
-
-    //create NoteDatabase for user if not exist
+    private var userData: UserData? = null
+    private var documentCollectionRef: DatabaseReference? = null
+    private var editorRealmRef: DatabaseReference? = null
     init {
-        val userData = googleAuthUiClient.getSignedInUser()
+        userData = googleAuthUiClient.getSignedInUser()
         if(userData != null){
-            userDB = db.collection("NoteDatabase")
-                .document(userData.userId)
-
-//            userDB?.set(userData)
-            notesCollectionReference = db.collection("Notes")
+            documentCollectionRef = rdb.getReference("Version")
+            editorRealmRef = rdb.getReference("Editor_Realm")
 
         }
-        Log.d(TAG, "userDB: $userDB")
 
     }
-
-    override suspend fun addNote(note: Note): String {
+    override suspend fun addDocument(document: Document): String {
         var docId = ""
-        notesCollectionReference?.let {
-            docId = it.add(note).await().id.toString()
+        Log.d(TAG1, "addDocument: ")
+        try {
+            documentCollectionRef?.let {dbRef->
+                dbRef.push().key?.let {
+                    docId = it
+                    Log.d(TAG1, "addDocument: $it")
 
-        }
-        notesCollectionReference?.let {
-            it.document(docId).update(
-                mapOf(
-                    "id" to docId,
-                )
-            ).await()}
-        return docId
-    }
+               dbRef.child(it).setValue(document.copy(
+                   id = it,
+                   ownerId = userData!!.userId,
+                   updatedAt = System.currentTimeMillis(),
+                   createdAt = System.currentTimeMillis(),
+               ))
+                       .addOnFailureListener {
+                        Log.d(TAG1, "addDocument: $it")
 
-    override suspend fun getNotes(): List<Note> {
-        val list = mutableListOf<Note>()
-        notesCollectionReference?.let {
-            try {
-                //why, because interacting with a Firestore database, which is asynchronous in nature.
-                val querySnapshot= it.get().await()
+                       }.addOnSuccessListener {
+                       Log.d(TAG1, "addDocument: sucess")
 
-                querySnapshot.documents.forEach {documentSnapshot->
 
-                    documentSnapshot.toObject<Note>()?.let { list.add(it) }
+                   }
+
+                    dbRef.child(it).child("sharedIdList").setValue("")
+                    dbRef.child(it).child("currentEditors").setValue("")
 
                 }
-
-
-            }catch(e: Exception) {
-                    Log.d(TAG, "failed to get user notes", e)
-                }
-        }
-
-        return list
-    }
-
-    override suspend fun getNoteById(id: String): Note? {
-        var note: Note? = null
-        notesCollectionReference?.let {
-            try {
-                val querySnapshot= it.document(id).get().await()
-                Log.d(TAG, "getNoteById id=$id : noteData: ${querySnapshot.toObject<Note>()}")
-                note = querySnapshot.toObject<Note>()
-
-            }catch (e:Exception){
-                Log.d(TAG, "failed to get note with id ", e)
-
             }
+        }catch (e:Exception){
+            Log.e(TAG1, "addDocument: $e", )
         }
-        return note
+        return docId
+
     }
 
-    override suspend fun getRealTimeNotes(listner: (List<Note>) -> Unit) {
-        notesCollectionReference?.let {
-            try {
-                //why, because interacting with a Firestore database, which is asynchronous in nature.
-                it.addSnapshotListener { snapshot, e ->
-                    val list = mutableListOf<Note>()
-                    if (e != null) {
-                        Log.w(TAG, "Listen failed.", e)
-                        return@addSnapshotListener
+    override suspend fun updateDocument(document: Document) {
+        try {
+            documentCollectionRef?.let {
+                it.child(document.id).updateChildren(
+                    mapOf(
+                        "title" to document.title,
+                        "body" to document.body,
+                        "updatedAt" to document.updatedAt
+                    )
+                )
+            }
+        }catch (e:Exception){
+            Log.e(TAG1, "addDocument: $e", )
+        }
+    }
+
+    override suspend fun deleteDocumentById(_docId: String) {
+        try {
+            documentCollectionRef?.let {
+                it.child(_docId).removeValue()
+            }
+        }catch (e:Exception){
+            Log.e(TAG1, "addDocument: $e", )
+        }    }
+
+    override suspend fun updateDocumentVersion(document: Document) {
+        try {
+            documentCollectionRef?.let {
+                it.child(document.id).setValue(
+                    document
+                )
+            }
+        }catch(e: Exception){
+            Log.e(TAG1, "updateDocumentVersion: $e")
+        }
+    }
+
+    override suspend fun getLatestVersion(document: Document,listener: ()->Unit) {
+        try {
+            documentCollectionRef?.let {
+                it.child(document.id).get().let {
+
+                    listener()
+                }
+            }
+        }catch (e: Exception){
+            Log.e(TAG1, "getLatestVersion: $e" )
+        }
+    }
+
+    override suspend fun removeVersion(document: Document) {
+        try {
+            documentCollectionRef?.let {
+                it.child(document.id).removeValue()
+            }
+        }catch (e: Exception){
+            Log.e(TAG1, "removeVersion: $e" )
+        }
+    }
+
+    override suspend fun getRealtimeVersion(id: String, listener: (Document) -> Unit){
+        try {
+            documentCollectionRef?.let {
+                it.child(id).addValueEventListener(object : ValueEventListener{
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        snapshot.getValue(Document::class.java)?.let { it1 -> listener(it1) }
                     }
-                    if (snapshot != null && !snapshot.isEmpty) {
 
-                        snapshot.documents.forEach {documentSnapshot->
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.w(TAG1, "loadPost:onCancelled", error.toException())
 
-                            documentSnapshot.toObject<Note>()?.let { list.add(it) }
+                    }
+
+                })
+            }
+        }catch (e: Exception){
+            Log.e(TAG1, "getRealtimeVersion: $e" )
+        }
+    }
+
+    override suspend fun createEditorRealm(document: Document) {
+        try {
+            editorRealmRef?.let {
+                it.child(document.id).setValue(
+                    mapOf(
+                        "id" to document.id,
+                        "title" to document.title,
+                         "body" to document.body,
+                        "currentEditors" to document.currentEditors,
+                        "updateAt" to document.updatedAt,
+                    )
+                )
+            }
+        }catch (e: Exception){
+            Log.e(TAG1, "createEditorRealm: $e" )
+        }
+    }
+
+    override suspend fun removeEditorRealm(document: Document) {
+        try {
+
+
+            editorRealmRef?.let {
+                it.child(document.id).removeValue()
+            }
+        }catch (e: Exception){
+            Log.e(TAG1, "removeEditorRelam: $e" )
+        }
+    }
+
+    override suspend fun updateEditorRealm(editorRelamChild: EditorRelamChild){
+        try {
+            editorRealmRef?.let {
+                it.child(editorRelamChild.id).updateChildren(
+                    mapOf(
+                        "title" to editorRelamChild.title,
+                        "body" to editorRelamChild.body,
+                        "currentEditors" to editorRelamChild.currentEditors,
+                        "updateAt" to System.currentTimeMillis(),
+
+                        )
+                )
+            }
+        }catch (e: Exception){
+            Log.e(TAG1, "updateEditorRealm: $e" )
+        }
+    }
+
+    override suspend fun getRealtimeEditorRealm(document: Document, listener: (EditorRelamChild) -> Unit) {
+        try {
+            editorRealmRef?.let {
+
+                it.child(document.id).addValueEventListener(
+                    object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if(snapshot.exists()){
+
+                            snapshot.getValue(EditorRelamChild::class.java)
+                                ?.let { it1 -> listener(it1) }
+                            }else{
+                                CoroutineScope(Dispatchers.IO).launch {
+                                createEditorRealm(document)
+                                }
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.w(TAG1, "getRealtimeEditorRealm:onCancelled", error.toException())
 
                         }
 
-                    } else {
-                        Log.d(TAG, "Current data: null")
                     }
-                    listner(list)
-                }
-
-
-            }catch(e: Exception) {
-                Log.d(TAG, "failed to get user notes", e)
+                )
             }
+        }catch (e: Exception){
+            Log.e(TAG1, "getRealtimeEditorRealm: $e" )
         }
-    }
-
-    override suspend fun updateNoteById(note: Note):Boolean {
-        var sucess = false
-        try {
-            notesCollectionReference?.let {
-                it.document(note.id).update(
-                    mapOf(
-                        "id" to note.id,
-                        "data" to note.data,
-                        "createdDate" to note.createdDate,
-                        "updatedDate" to note.updatedDate
-                    )
-                ).await()
-                sucess = true
-            }
-        }catch(e: Exception) {
-            Log.d(TAG, "failed to update user notes", e)
-        }
-        return sucess
-
-    }
-
-    override suspend fun deleteNoteById(id: String): Boolean {
-        TODO("Not yet implemented")
     }
 
 

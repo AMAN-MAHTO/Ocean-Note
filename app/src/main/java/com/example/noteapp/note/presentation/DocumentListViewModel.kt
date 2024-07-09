@@ -23,7 +23,7 @@ import com.example.noteapp.auth.domain.model.UserData
 import com.example.noteapp.note.domain.models.Document
 import com.example.noteapp.note.domain.models.Shared
 import com.example.noteapp.note.domain.repository.DatabaseClient2
-import com.example.noteapp.screens.home.NavigationItem
+import com.example.noteapp.note.domain.repository.RealtimeDatabaseClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +33,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DocumentListViewModel @Inject constructor(
     private val dbClient: DatabaseClient2,
+    private val rdbClient: RealtimeDatabaseClient,
     private val googleAuthUiClient: GoogleAuthUiClient,
 
 ) : ViewModel() {
@@ -47,37 +48,27 @@ class DocumentListViewModel @Inject constructor(
 
     private val _sharedCardList = MutableStateFlow(listOf<Shared>())
 
-    private val _navigationItems = listOf(
-        NavigationItem(
-            title = "Logout",
-            unselectedIcon = Icons.Outlined.Logout,
-            selectedIcon = Icons.Filled.Logout,
-            onItemClick = {
-                viewModelScope.launch {
-                    googleAuthUiClient.signOut()
-                    it.popBackStack()
-                    it.navigate(Screen.SignIn.route)
-                }
-            }
-        ),
-
-    )
-
+    private val _isProfileView = MutableStateFlow(false)
+    val isProfileView = _isProfileView.asStateFlow()
 
     init {
         viewModelScope.launch {
 
+
             dbClient.getRealtimeDocumentOwned {
                 Log.d("Document", "owned doc: $it")
+                _ownedDocuments.value = emptyList()
                 _ownedDocuments.value = it
             }
 
             dbClient.getRealtimeSharedDocumentOfCurrentUser(
                 sharedListner = {
+                    _sharedCardList.value = emptyList()
                     _sharedCardList.value = it
                 },
              docListner =  {
                 Log.d("Document", "shared doc: $it")
+                 _sharedDocument.value = emptyList()
                 _sharedDocument.value = it
 
             })
@@ -104,6 +95,7 @@ class DocumentListViewModel @Inject constructor(
 
         viewModelScope.launch {
             val docId = dbClient.addDocument(Document())
+
             Log.d("Document", "onClickFAB: new doc id ${docId}")
 
             navHostController.navigate(Screen.Document.setId(docId))
@@ -115,8 +107,20 @@ class DocumentListViewModel @Inject constructor(
         return _userData
     }
 
-    fun getNavigationItems(): List<NavigationItem> {
-        return _navigationItems
+    fun onDismissProfileDialogRequest() {
+        _isProfileView.value = false
+    }
+
+    fun onProfileDialogRequest() {
+        _isProfileView.value = true
+    }
+
+    fun onLogout() {
+        viewModelScope.launch {
+        
+        googleAuthUiClient.signOut()
+            _isProfileView.value =false
+        }
     }
 
 

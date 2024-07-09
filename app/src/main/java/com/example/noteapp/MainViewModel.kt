@@ -44,7 +44,6 @@ class MainViewModel @Inject constructor(
                 _startDestination.value = Screen.SignIn.route
             }
 
-
         }
         _isReady.value = true
     }

@@ -93,9 +93,7 @@ class SignInViewModel @Inject constructor(
         Log.d("SignIn", "signUp: email:$email and password:$password ")
     }
 
-    fun navigateSignUp(navScreen: (String) -> Unit) {
-        navScreen(Screen.SignUp.route)
-    }
+
 
 
 

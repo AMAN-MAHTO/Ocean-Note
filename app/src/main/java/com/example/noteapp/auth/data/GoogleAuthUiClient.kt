@@ -83,6 +83,7 @@ class GoogleAuthUiClient (
         try {
             oneTapClient.signOut().await()
             auth.signOut()
+            
         } catch(e: Exception) {
             e.printStackTrace()
             if(e is CancellationException) throw e

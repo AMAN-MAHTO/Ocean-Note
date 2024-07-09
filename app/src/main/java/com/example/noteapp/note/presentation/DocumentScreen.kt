@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Card
@@ -41,15 +42,12 @@ fun DocumentScreen(
     navHostController: NavHostController,
 
     ) {
-    val doc = remember {
-        mutableStateOf(Document())
-    }
-    doc.value = viewModel.doc.collectAsState().value
 
 
-
-    DocumentContent(doc= doc.value,
-        onClickBack = onClickBack,
+    DocumentContent(
+        onClickBack = {
+            viewModel.onCloseOrSave(onClickBack)
+             },
         state = viewModel.state.collectAsState(),
         onTitleChange = viewModel::onTitleChange,
         onBodyChange = viewModel::onBodyChange,
@@ -58,7 +56,7 @@ fun DocumentScreen(
         onDeleteAlertDialogDismissRequest = viewModel::onDeleteAlertDialogDismissRequest,
         onClickShare = viewModel::onClickShare,
         onDismissShareDialogRequest = viewModel::onDismissShareDialogRequest,
-        navHostController= navHostController,
+        navHostController = navHostController,
 
         )
 
@@ -69,7 +67,6 @@ fun DocumentScreen(
 @Composable
 fun DocumentContent(
     modifier: Modifier = Modifier,
-    doc: Document,
     onClickBack: ()->Unit,
     state: State<DocumentState>,
     onTitleChange: (title: String)->Unit,
@@ -87,8 +84,17 @@ fun DocumentContent(
             title = { Text(text = " ") },
             navigationIcon = {
                 IconButton(onClick = onClickBack) {
-                    Icon(Icons.Default.ArrowBackIosNew,
-                        contentDescription = "")
+                    if(state.value.permission == Permission.READ) {
+                        Icon(
+                            Icons.Default.ArrowBackIosNew,
+                            contentDescription = ""
+                        )
+                    }else{
+                        Icon(
+                            Icons.Default.Save,
+                            contentDescription = ""
+                        )
+                    }
                 }
             },
             actions = {
@@ -98,13 +104,13 @@ fun DocumentContent(
                 IconButton(onClick = { onClickDelete() } ) {
                     Icon(imageVector = Icons.Outlined.Delete, contentDescription = "delete")
                 }
-                    }
+
 
                 IconButton(onClick = { onClickShare() } ) {
                     Icon(imageVector = Icons.Outlined.Share, contentDescription = "share")
                 }
 
-                }
+                }}
             }
             )
 
@@ -118,14 +124,13 @@ fun DocumentContent(
 
             if(state.value.permission == Permission.ALL || state.value.permission == Permission.WRITE ){
                 DocumentContentWrite(
-                    doc = doc,
                     state = state,
                     onTitleChange = onTitleChange,
                     onBodyChange = onBodyChange
                 )
             }else if(state.value.permission == Permission.READ){
 
-            DocumentContentRead(doc = doc)
+            DocumentContentRead(doc = state.value.document)
             }
 
 
@@ -180,7 +185,6 @@ fun DocumentContentRead(modifier: Modifier = Modifier,doc: Document) {
 @Composable
 fun DocumentContentWrite(
     modifier: Modifier = Modifier,
-    doc: Document,
     state: State<DocumentState>,
     onTitleChange: (title: String)->Unit,
     onBodyChange: (title: String)->Unit

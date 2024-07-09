@@ -63,7 +63,8 @@ fun ShareDialogBox(
         viewModel::onClickResultElement,
         viewModel::onClickSelecteElementClose,
         viewModel::onClickDropDownPermission,
-        viewModel::onClickShare
+        viewModel::changeStatePermission,
+        viewModel::onClickShare,
 
     )
 }
@@ -78,7 +79,8 @@ private fun ShareDialogBoxContent(
     onClickResultElement: (element: copyUser?)->Unit,
     onClickSelecteElementClose: ()->Unit,
     onClickDropDownPermission:(shareHolder : ShareHolder, newPermission:Permission)->Unit,
-    onClickShare: ()->Unit) {
+    changeStatePermission: (permission: Permission)->Unit,
+    onClickShare: (onDismissRequest: ()->Unit)->Unit) {
     Dialog(
         onDismissRequest = onDismissRequest,
     ) {
@@ -102,7 +104,7 @@ Box(
                 value = state.value.query,
                 onValueChange = onQueryChange
             )
-            LazyColumn(modifier  = Modifier.background(color = MaterialTheme.colorScheme.primaryContainer)) {
+            LazyColumn() {
                 items(state.value.result) {
                     var modifier = Modifier.padding(8.dp)
 
@@ -133,6 +135,49 @@ Box(
                     Icon(imageVector = Icons.Filled.Close, contentDescription = "")
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+            Column() {
+                val expand = remember {
+                    mutableStateOf(false)
+                }
+                TextButton(onClick = { expand.value = true }) {
+                    Text(text = state.value.permissionType.toString())
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = ""
+                    )
+                }
+                DropdownMenu(expanded = expand.value, onDismissRequest = { expand.value = false }) {
+                    DropdownMenuItem(
+                        text = { Text(text = Permission.READ.toString()) },
+                        onClick = {
+                            changeStatePermission(Permission.READ)
+                            expand.value = false
+                        })
+                    DropdownMenuItem(
+                        text = { Text(text = Permission.WRITE.toString()) },
+                        onClick = {
+                            changeStatePermission( Permission.WRITE)
+                            expand.value = false
+                        })
+                }
+            }
+
+                TextButton(
+                    onClick = { onClickShare(onDismissRequest) },
+                    enabled = if(state.value.selectedElement == copyUser()){false}else{true},
+
+                ) {
+                    Text("SHARE")
+                }
+
+
+            }
 
         }
 
@@ -140,7 +185,7 @@ Box(
 
         Column {
             Spacer(modifier = Modifier.height(84.dp))
-            if (state.value.peopleWithAcess.isNotEmpty()) {
+            if (state.value.peopleWithAcess.isNotEmpty() && state.value.query.isEmpty() && state.value.selectedElement == copyUser()) {
 
                 Text(text = "Peopel with access")
                 Spacer(modifier = Modifier.height(8.dp))
@@ -161,6 +206,7 @@ Box(
                                 Row (
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(.7f)
 
                                 ){
 
@@ -171,11 +217,11 @@ Box(
                                         modifier = Modifier
                                             .size(32.dp)
                                             .clip(CircleShape)
-                                            .border(2.dp, color = MaterialTheme.colorScheme.primary)
                                             ,
-                                        contentScale = ContentScale.Crop
+                                        contentScale = ContentScale.Fit
                                     )
                                 }
+
                                 if (it.email != null) {
                                     Text(
                                         text = it.email,
@@ -183,12 +229,14 @@ Box(
                                     )
                                 }
                                 }
-                                Column {
+                                Column(
+                                    modifier = Modifier.weight(.3f)
+                                ) {
                                     val expand = remember {
                                         mutableStateOf(false)
                                     }
                                     TextButton(onClick = { expand.value = true }) {
-                                        Text(text = state.value.permissionType.toString())
+                                        Text(text = it.permissionType)
                                         Icon(
                                             imageVector = Icons.Default.KeyboardArrowDown,
                                             contentDescription = ""
@@ -215,16 +263,7 @@ Box(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Row {
-                TextButton(
-                    onClick = onClickShare,
-                    enabled = if(state.value.selectedElement == copyUser()){false}else{true}
 
-                ) {
-                    Text("SHARE")
-                }
-            }
         }
 
 
@@ -281,6 +320,8 @@ private fun ShareDialogBoxContentPrev() {
         onDismissRequest = { /*TODO*/ },
         state = remember {
             mutableStateOf(ShareDialogState(
+                query = "",
+                selectedElement = copyUser(),
                 peopleWithAcess = listOf(ShareHolder(sharedId = "", documentId = "", email = "amanmahto848@gmail.com", permissionType = "READ"))
             ))
         },
@@ -289,6 +330,7 @@ private fun ShareDialogBoxContentPrev() {
         onClickDropDownPermission = {
                                     shareHolder, newPermission ->
         },
+        changeStatePermission = {},
         onClickResultElement = {}
     ) {
 

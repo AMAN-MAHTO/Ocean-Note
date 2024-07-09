@@ -4,13 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.compose.AppTheme
 import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.example.noteapp.auth.domain.repository.UserDatabaseClient
-import com.example.noteapp.ui.theme.NoteAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -40,7 +41,7 @@ class MainActivity : ComponentActivity() {
 //        }
 
         setContent {
-            NoteAppTheme {
+            AppTheme {
 
                 navController = rememberNavController()
                 NavGraph(navHostController = navController,googleAuthUiClient)

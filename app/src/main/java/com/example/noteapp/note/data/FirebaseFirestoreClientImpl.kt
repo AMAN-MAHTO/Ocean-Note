@@ -1,6 +1,7 @@
 package com.example.noteapp.note.data
 
 import android.util.Log
+import com.example.noteapp.Permission
 import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.example.noteapp.auth.domain.model.UserData
 import com.example.noteapp.auth.domain.model.copyUser
@@ -8,15 +9,16 @@ import com.example.noteapp.note.domain.models.Document
 import com.example.noteapp.note.domain.models.ShareHolder
 import com.example.noteapp.note.domain.models.Shared
 import com.example.noteapp.note.domain.repository.DatabaseClient2
+import com.example.noteapp.note.domain.repository.RealtimeDatabaseClient
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
-
-class FirebaseDatabaseClientImpl2 @Inject constructor(
+val TAG = "FirebaseDBImpl"
+class FirebaseFirestoreClientImpl @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient,
-    db: FirebaseFirestore
+    db: FirebaseFirestore,
 
 ): DatabaseClient2 {
     private var documentsCollectionReference: CollectionReference? = null
@@ -113,10 +115,51 @@ class FirebaseDatabaseClientImpl2 @Inject constructor(
         return sharedId
     }
 
+    override suspend fun addEditor(document: Document) {
+        try {
+            documentsCollectionReference?.let { docRef->
+                docRef.document(document.id).get().await().toObject<Document>()?.let {
+                    val editor = it.currentEditors.toMutableList()
+                    editor.add(userData!!.userId)
+                    docRef.document(document.id).update(
+                        mapOf(
+                            "currentEditors" to editor
+                        )
+                    )
+                }
+            }
+        }catch(e: Exception) {
+            Log.d(TAG, "failed ", e)
+        }
+    }
+    override suspend fun removeEditor(document: Document, listener:()->Unit) {
+        try {
+            documentsCollectionReference?.let { docRef->
+                docRef.document(document.id).get().await().toObject<Document>()?.let {
+                    val editor = it.currentEditors.toMutableList()
+                    editor.remove(userData!!.userId)
+                    docRef.document(document.id).update(
+                        mapOf(
+                            "currentEditors" to editor
+                        )
+                    )
+                    if(editor.isEmpty()){
+                        listener()
+                    }
+                }
+            }
+        }catch(e: Exception) {
+            Log.d(TAG, "failed ", e)
+
+        }
+    }
+
+    override suspend fun addVersion(document: Document) {
+    }
     override suspend fun getSharedCard(docId: String, listener: (Shared) -> Unit) {
         sharedCollectionReference?.let {
             try {
-                it.whereEqualTo("documentId", docId).whereEqualTo("userId",userData!!.userId).addSnapshotListener{
+                it.whereEqualTo("documentId", docId).whereEqualTo("sharedWith",userData!!.email).addSnapshotListener{
                     snapshot, e ->
                     if (e != null) {
                         Log.w(TAG, "Listen failed.", e)
@@ -277,6 +320,23 @@ class FirebaseDatabaseClientImpl2 @Inject constructor(
             }
         }
     }
+
+    override suspend fun updateSharedPermission(shareHolder: ShareHolder, permission: Permission) {
+        try {
+            sharedCollectionReference?.let {
+                it.document(shareHolder.sharedId).update(
+                    mapOf(
+                        "permissionType" to permission.toString()
+                    )
+                )
+            }
+        }catch (e: Exception){
+            Log.e(TAG, "updateSharedPermission: error $e")
+        }
+    }
+
+
+
 
     override suspend fun getRealtimeDocumentById(id: String,listener: (Document)->Unit) {
         documentsCollectionReference?.let {
