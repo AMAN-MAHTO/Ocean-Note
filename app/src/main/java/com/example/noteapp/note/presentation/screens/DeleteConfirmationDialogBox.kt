@@ -1,10 +1,7 @@
-package com.example.noteapp.note.presentation.component
+package com.example.noteapp.note.presentation.screens
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -12,8 +9,8 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun DeleteConfirmationDialogBox(
-    onDismissRequest: ()->Unit,
-    onConfirmation: ()->Unit,
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
 ) {
     AlertDialog(
 
@@ -33,7 +30,8 @@ fun DeleteConfirmationDialogBox(
                 shape = MaterialTheme.shapes.small
             ) {
                 Text("DELETE")
-            }        },
+            }
+        },
         dismissButton = {
             TextButton(
                 onClick = {
@@ -41,6 +39,7 @@ fun DeleteConfirmationDialogBox(
                 }
             ) {
                 Text("CANCEL")
-            }        }
+            }
+        }
     )
 }

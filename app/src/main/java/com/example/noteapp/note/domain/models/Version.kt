@@ -1,10 +1,11 @@
 package com.example.noteapp.note.domain.models
 
-import com.google.type.DateTime
-
 data class Version(
-    val id: String,
-    val versionNumber: Int,
-    val content: Content,
-    val createdAt: DateTime,
-)
+    val docId: String = "",
+    val title: String = "",
+    val body: String = "",
+    val ownerId: String = "",
+    val createdAt: Long = 0,
+
+
+    )

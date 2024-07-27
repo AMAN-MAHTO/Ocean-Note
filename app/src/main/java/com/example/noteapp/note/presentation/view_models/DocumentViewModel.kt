@@ -1,4 +1,4 @@
-package com.example.noteapp.note.presentation
+package com.example.noteapp.note.presentation.view_models
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
@@ -9,7 +9,7 @@ import com.example.noteapp.DOCUMENT_SCREEN_ARGUMENT_ID
 import com.example.noteapp.Permission
 import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.example.noteapp.auth.domain.model.UserData
-import com.example.noteapp.note.data.TAG1
+import com.example.noteapp.note.data.TAG
 import com.example.noteapp.note.domain.models.Document
 import com.example.noteapp.note.domain.models.EditorRelamChild
 import com.example.noteapp.note.domain.repository.DatabaseClient2
@@ -38,6 +38,7 @@ class DocumentViewModel @Inject constructor(
     )
     val state = _state.asStateFlow()
     var _isEditorAdded = false
+    var _isChancesMade = false
 
     init {
 
@@ -56,7 +57,7 @@ class DocumentViewModel @Inject constructor(
                     viewModelScope.launch {
                         _docId.value?.let {
                             if (!_isEditorAdded) {
-
+                                Log.d(TAG, "editor added: ")
                                 dbClient.addEditor(document)
                                 _isEditorAdded = true
                             }
@@ -119,6 +120,7 @@ class DocumentViewModel @Inject constructor(
 
 
     fun onTitleChange(title: String) {
+        _isChancesMade = true
         _state.value = _state.value.copy(
             document = _state.value.document.copy(
                 title = title,
@@ -140,6 +142,7 @@ class DocumentViewModel @Inject constructor(
     }
 
     fun onBodyChange(body: String) {
+        _isChancesMade = true
         _state.value = _state.value.copy(
             document = _state.value.document.copy(
                 body = body,
@@ -165,11 +168,23 @@ class DocumentViewModel @Inject constructor(
 
             if (_isEditorAdded) {
                 dbClient.updateDocument(_state.value.document)
+                Log.d(TAG, "onCloseOrSave: updating doc done")
+
                 rdbClient.removeEditorRealmListener(_state.value.document)
+                Log.d(TAG, "onCloseOrSave: remove editor realm")
+
                 dbClient.removeEditor(_state.value.document) {
-                    viewModelScope.launch {
-                        dbClient.addVersion(_state.value.document)
-                        rdbClient.removeEditorRealm(_state.value.document)
+                    Log.d(TAG, "onCloseOrSave: remove editor")
+                    if (_isChancesMade) {
+
+                        viewModelScope.launch {
+                            dbClient.addVersion(_state.value.document)
+                            Log.d(TAG, "onCloseOrSave: adding version")
+
+//                        rdbClient.removeEditorRealm(_state.value.document)
+//                        Log.d(TAG, "onCloseOrSave: removing realm")
+
+                        }
                     }
                 }
 
@@ -213,6 +228,7 @@ class DocumentViewModel @Inject constructor(
         _state.value = _state.value.copy(
             openShareDialog = true
         )
+
     }
 
     fun onDismissShareDialogRequest() {

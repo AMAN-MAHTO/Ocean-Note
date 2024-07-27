@@ -1,4 +1,4 @@
-package com.example.noteapp.note.presentation
+package com.example.noteapp.note.presentation.screens
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -45,7 +45,7 @@ import com.example.noteapp.R
 import com.example.noteapp.Screen
 import com.example.noteapp.auth.domain.model.UserData
 import com.example.noteapp.note.domain.models.Document
-import com.example.noteapp.note.presentation.component.ProfileDialogBox
+import com.example.noteapp.note.presentation.view_models.DocumentListViewModel
 import kotlinx.coroutines.flow.StateFlow
 
 import java.text.SimpleDateFormat
@@ -53,14 +53,15 @@ import java.util.Date
 
 
 @Composable
-fun DocumentListScreen (
+fun DocumentListScreen(
     viewModel: DocumentListViewModel = hiltViewModel(),
     navHostController: NavHostController,
-){
+) {
     val documents = remember {
         mutableStateOf(emptyList<Document>())
     }
-    documents.value = viewModel.ownedDocuments.collectAsState().value + viewModel.sharedDocument.collectAsState().value
+    documents.value =
+        viewModel.ownedDocuments.collectAsState().value + viewModel.sharedDocument.collectAsState().value
     Log.d("Document", "DocumentListScreen: ${documents.value.sortedBy { it.updatedAt }.toString()}")
 
     DocumentList(
@@ -68,7 +69,7 @@ fun DocumentListScreen (
         onClickDoc = { navHostController.navigate(Screen.Document.setId(it)) },
         onClickFAB = viewModel::onClickFAB,
         getUserData = viewModel::getUserData,
-        navHostController= navHostController,
+        navHostController = navHostController,
         isProfileView = viewModel.isProfileView,
         onDismissProfileDialogRequest = viewModel::onDismissProfileDialogRequest,
         onProfileDialogRequest = viewModel::onProfileDialogRequest,
@@ -87,10 +88,10 @@ fun DocumentList(
     getUserData: () -> UserData?,
     navHostController: NavHostController,
     isProfileView: StateFlow<Boolean>,
-    onDismissProfileDialogRequest: ()->Unit,
-    onProfileDialogRequest: ()->Unit,
+    onDismissProfileDialogRequest: () -> Unit,
+    onProfileDialogRequest: () -> Unit,
     userData: UserData?,
-    onLogout : ()->Unit,
+    onLogout: () -> Unit,
 
     ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -100,42 +101,48 @@ fun DocumentList(
 
     Scaffold(
         topBar = {
-                TopAppBar(title = {
+            TopAppBar(title = {
 
-                },
-    actions = {
-        IconButton(onClick = onProfileDialogRequest,
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(color = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.user),
-                modifier = Modifier.size(18.dp),
-                contentDescription = "",
-                tint = MaterialTheme.colorScheme.tertiary
+            },
+                actions = {
+                    IconButton(
+                        onClick = onProfileDialogRequest,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(color = MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.user),
+                            modifier = Modifier.size(18.dp),
+                            contentDescription = "",
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+
+                    }
+                }
             )
 
+
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { onClickFAB(navHostController) }) {
+                Icon(imageVector = Icons.Filled.Add, contentDescription = "")
+            }
         }
-    }
-                    )
-
-
-
-             },
-        floatingActionButton = {FloatingActionButton(onClick = { onClickFAB(navHostController) }) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = "")
-        }}
     ) {
 
-        when{
+        when {
             isProfileView.collectAsState().value -> ProfileDialogBox(
                 onDismissRequest = onDismissProfileDialogRequest,
                 userData = userData,
-                onClickLogout = onLogout)
+                onClickLogout = onLogout
+            )
         }
 
-        LazyVerticalStaggeredGrid(columns = StaggeredGridCells.Fixed(2), modifier = modifier.padding(it)) {
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Fixed(2),
+            modifier = modifier.padding(it)
+        ) {
 
 
             items(list) {
@@ -216,20 +223,70 @@ fun DocumentList(
                 }
             }
 
-    }}
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun DocListPrev() {
     val documents = listOf(
-    Document(id="", title="sdfgsdfggggggggggggggggggfffffffffffffffgsdfg", ownerId="FKy3vlHgiPhR7PGv7JOcWH908so1"),
-    Document(id="1BkcqaMhqjbWUJ61FJ6b", title="title3", body="body3", ownerId="FKy3vlHgiPhR7PGv7JOcWH908so1", currentEditors=listOf("editor3", "editor2"), lastEditTime=1719549696618, createdAt=1719549696618, updatedAt=1719549696618),
-    Document(id="ZV9o4ToqYIbDzg9vzjkD", title="title1", body="body1", ownerId="FKy3vlHgiPhR7PGv7JOcWH908so1", currentEditors=listOf("editor2", "editor3"), lastEditTime=1719549696618, createdAt=1719549696618, updatedAt=1719549696618),
-    Document(id="dYzhmJTTBUFnhBH3Uuvv", title="title2", body="body2", ownerId="FKy3vlHgiPhR7PGv7JOcWH908so1", currentEditors=listOf("editor3", "editor4"), lastEditTime=1719549696618, createdAt=1719549696618, updatedAt=1719549696618),
-    Document(id="5p1bXtq5yZFm8EezF29m", title="title1", body="body1", ownerId="G55ICUXesqS0co8U10E8s3acl3w2", currentEditors=listOf("editor3", "editor3"), lastEditTime=1719549824809, createdAt=1719549824809, updatedAt=1719549824809),
-    Document(id="PjZMnieZJyPBQkwS3zA1", title="title2", body="body2", ownerId="G55ICUXesqS0co8U10E8s3acl3w2", currentEditors=listOf("editor2", "editor3"), lastEditTime=1719549824809, createdAt=1719549824809, updatedAt=1719549824809)
-)
+        Document(
+            id = "",
+            title = "sdfgsdfggggggggggggggggggfffffffffffffffgsdfg",
+            ownerId = "FKy3vlHgiPhR7PGv7JOcWH908so1"
+        ),
+        Document(
+            id = "1BkcqaMhqjbWUJ61FJ6b",
+            title = "title3",
+            body = "body3",
+            ownerId = "FKy3vlHgiPhR7PGv7JOcWH908so1",
+            currentEditors = listOf("editor3", "editor2"),
+            lastEditTime = 1719549696618,
+            createdAt = 1719549696618,
+            updatedAt = 1719549696618
+        ),
+        Document(
+            id = "ZV9o4ToqYIbDzg9vzjkD",
+            title = "title1",
+            body = "body1",
+            ownerId = "FKy3vlHgiPhR7PGv7JOcWH908so1",
+            currentEditors = listOf("editor2", "editor3"),
+            lastEditTime = 1719549696618,
+            createdAt = 1719549696618,
+            updatedAt = 1719549696618
+        ),
+        Document(
+            id = "dYzhmJTTBUFnhBH3Uuvv",
+            title = "title2",
+            body = "body2",
+            ownerId = "FKy3vlHgiPhR7PGv7JOcWH908so1",
+            currentEditors = listOf("editor3", "editor4"),
+            lastEditTime = 1719549696618,
+            createdAt = 1719549696618,
+            updatedAt = 1719549696618
+        ),
+        Document(
+            id = "5p1bXtq5yZFm8EezF29m",
+            title = "title1",
+            body = "body1",
+            ownerId = "G55ICUXesqS0co8U10E8s3acl3w2",
+            currentEditors = listOf("editor3", "editor3"),
+            lastEditTime = 1719549824809,
+            createdAt = 1719549824809,
+            updatedAt = 1719549824809
+        ),
+        Document(
+            id = "PjZMnieZJyPBQkwS3zA1",
+            title = "title2",
+            body = "body2",
+            ownerId = "G55ICUXesqS0co8U10E8s3acl3w2",
+            currentEditors = listOf("editor2", "editor3"),
+            lastEditTime = 1719549824809,
+            createdAt = 1719549824809,
+            updatedAt = 1719549824809
+        )
+    )
 //    DocumentList(list = documents, onClickDoc = {}, onClickFAB = {},
 //        getNavigationItems = {
 //

@@ -8,8 +8,8 @@ import com.example.noteapp.auth.domain.model.copyUser
 import com.example.noteapp.note.domain.models.Document
 import com.example.noteapp.note.domain.models.ShareHolder
 import com.example.noteapp.note.domain.models.Shared
+import com.example.noteapp.note.domain.models.Version
 import com.example.noteapp.note.domain.repository.DatabaseClient2
-import com.example.noteapp.note.domain.repository.RealtimeDatabaseClient
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
@@ -26,6 +26,8 @@ class FirebaseFirestoreClientImpl @Inject constructor(
     private var documentsCollectionReference: CollectionReference? = null
     private var sharedCollectionReference: CollectionReference? = null
     private var userCollectionReference: CollectionReference? = null
+    private var versionCollectionReference: CollectionReference? = null
+
     private var userData: UserData? = null
 
     init {
@@ -35,7 +37,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
             documentsCollectionReference = db.collection("documents")
             sharedCollectionReference = db.collection("shared")
             userCollectionReference = db.collection("users")
-
+            versionCollectionReference = db.collection("versions")
         }
     }
 
@@ -163,6 +165,35 @@ class FirebaseFirestoreClientImpl @Inject constructor(
     }
 
     override suspend fun addVersion(document: Document) {
+        try {
+            var versionId = ""
+            versionCollectionReference?.let {
+                versionId = it.add(
+                    Version(
+                        docId = document.id,
+                        title = document.title,
+                        body = document.body,
+                        ownerId = document.ownerId,
+                        createdAt = System.currentTimeMillis(),
+                    )
+                ).await().id
+            }
+
+            documentsCollectionReference?.let { docRef ->
+                docRef.document(document.id).get().await().toObject<Document>()?.let {
+                    val list = it.versionIdList.toMutableList()
+                    list.add(versionId)
+                    docRef.document(document.id).update(
+                        mapOf(
+                            "versionIdList" to list
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "addVersion: $e")
+        }
+
     }
 
     override suspend fun getSharedCard(docId: String, listener: (Shared) -> Unit) {

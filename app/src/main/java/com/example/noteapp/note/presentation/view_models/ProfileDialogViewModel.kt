@@ -1,4 +1,4 @@
-package com.example.noteapp.note.presentation.component
+package com.example.noteapp.note.presentation.view_models
 
 import androidx.lifecycle.ViewModel
 import com.example.noteapp.auth.data.GoogleAuthUiClient
@@ -8,7 +8,7 @@ import javax.inject.Inject
 
 class ProfileDialogViewModel @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient
-) :ViewModel() {
+) : ViewModel() {
     private val _userData = MutableStateFlow(googleAuthUiClient.getSignedInUser())
     val userData = _userData.asStateFlow()
 }

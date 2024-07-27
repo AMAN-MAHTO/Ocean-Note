@@ -19,32 +19,19 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
 
-
-    lateinit var navController : NavHostController
+    lateinit var navController: NavHostController
 
     @Inject
     lateinit var googleAuthUiClient: GoogleAuthUiClient
 
-
-
-    val mainViewModel: MainViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //splash screen setup
-//        installSplashScreen().apply {
-//            setKeepOnScreenCondition{
-//                //this laamda keep the splash screen, till the value is true
-//                !mainViewModel.isReady.value
-//            }
-//        }
 
         setContent {
             AppTheme {
-
                 navController = rememberNavController()
-                NavGraph(navHostController = navController,googleAuthUiClient)
+                NavGraph(navHostController = navController, googleAuthUiClient)
             }
         }
 

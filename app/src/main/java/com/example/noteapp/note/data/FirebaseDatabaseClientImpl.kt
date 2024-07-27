@@ -34,6 +34,8 @@ class FirebaseDatabaseClientImpl @Inject constructor(
         if (userData != null) {
             documentCollectionRef = rdb.getReference("Version")
             editorRealmRef = rdb.getReference("Editor_Realm")
+            documentCollectionRef!!.keepSynced(true)
+            editorRealmRef!!.keepSynced(true)
 
         }
 
