@@ -388,6 +388,16 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteSharedPermission(shareHolder: ShareHolder) {
+        try {
+            sharedCollectionReference?.let {
+                it.document(shareHolder.sharedId).delete()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "deleteSharedPermission: error $e")
+        }
+    }
+
 
     override suspend fun getRealtimeDocumentById(id: String, listener: (Document) -> Unit) {
         documentsCollectionReference?.let {

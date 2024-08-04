@@ -14,15 +14,25 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,9 +71,10 @@ fun ManageAccessScreen(
     ManageAccessScreenContent(
         navHostController = navHostController,
         state = viewModel.state.collectAsState(),
-        onClickDropDownPermission = viewModel::onClickDropDownPermission,
+        onClickPermission = viewModel::onClickPermission,
         onClickPeople = viewModel::onClickPeople,
-        onDismissRequestBottomSheet = viewModel::onDismissRequestBottomSheet
+        onDismissRequestBottomSheet = viewModel::onDismissRequestBottomSheet,
+        onClickRemovePeople = viewModel::onClickRemovePeople
     )
 
 
@@ -74,8 +86,9 @@ fun ManageAccessScreenContent(
     modifier: Modifier = Modifier,
     navHostController: NavHostController,
     state: State<ManageAccessState>,
-    onClickDropDownPermission: (ShareHolder, Permission) -> Unit,
+    onClickPermission: (ShareHolder, Permission) -> Unit,
     onClickPeople: (ShareHolder) -> Unit,
+    onClickRemovePeople: (ShareHolder) -> Unit,
     onDismissRequestBottomSheet: () -> Unit,
 ) {
     Scaffold(
@@ -158,78 +171,94 @@ fun ManageAccessScreenContent(
                 }
             }
 
-            if (state.value.showBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = onDismissRequestBottomSheet,
-                    sheetState = sheetState,
 
+        }
+        if (state.value.showBottomSheet) {
+            ModalBottomSheet(
+
+                dragHandle = {},
+                onDismissRequest = onDismissRequestBottomSheet,
+                sheetState = sheetState,
+
+                ) {
+                // Sheet content
+                Column (
+                    modifier = Modifier.padding(start = 16.dp,end = 16.dp,top = 16.dp, bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ){
+
+
+                    val it = state.value.selectedPeople
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
                     ) {
-                    // Sheet content
-                    Column {
-                        val it = state.value.selectedPeople
-                        Card(
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth()
-                                .clickable {
-                                    onClickPeople(it)
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
+                        if (it.profilePic != null) {
+                            AsyncImage(
+                                model = it.profilePic,
+                                contentDescription = "Profile picture",
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                if (it.profilePic != null) {
-                                    AsyncImage(
-                                        model = it.profilePic,
-                                        contentDescription = "Profile picture",
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .clip(CircleShape),
-                                        contentScale = ContentScale.Fit
-                                    )
-                                }
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(start = 16.dp)
-                                ) {
-
-                                    if (it.email != null) {
-                                        Text(
-                                            text = it.email,
-                                            style = MaterialTheme.typography.bodyLarge
-                                        )
-                                    }
-
-
-                                }
-
-
-                            }
+                                    .size(24.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Fit
+                            )
                         }
-                        Divider()
-                        
-                    }
-                    Button(onClick = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                onDismissRequestBottomSheet()
-//                                state.value.showBottomSheet = false
-                            }
+
+                        if (it.email != null) {
+                            Text(
+                                text = it.email,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
-                    }) {
-                        Text("Hide bottom sheet")
+
+
+
                     }
-                }
-            }
+
+
+
+
+                    HorizontalDivider()
+
+                    NavigationDrawerItem(
+                        label = { Text("Read") },
+                        onClick = { onClickPermission(it, Permission.READ) },
+                        selected = it.permissionType == Permission.READ.toString(),
+                        icon = { if(it.permissionType == Permission.READ.toString()) {
+                            Icon(Icons.Outlined.Check, contentDescription = null)
+                        } else{
+                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null)
+                        }},
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Write") },
+                        onClick = { onClickPermission(it,Permission.WRITE) },
+                        selected = it.permissionType == Permission.WRITE.toString(),
+                        icon = { if(it.permissionType == Permission.WRITE.toString()) {
+                            Icon(Icons.Outlined.Check, contentDescription = null)
+                        } else{
+                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null)
+                        }},
+                    )
+                    HorizontalDivider()
+                    NavigationDrawerItem(
+                        label = { Text("Remove") },
+                        onClick = { onClickRemovePeople(it)},
+                        selected = false,
+                        icon = {
+                            Icon(Icons.Default.Close, contentDescription = null)}
+
+                    )
+
+
+
+
+            }}
         }
 
     }
@@ -284,9 +313,10 @@ private fun prevllljj() {
                 )
             )
         },
-        onClickDropDownPermission = { _, _ -> },
+        onClickPermission = { _, _ -> },
         navHostController = rememberNavController(),
         onClickPeople = {},
+        onClickRemovePeople = {},
         onDismissRequestBottomSheet = {}
     )
 }
