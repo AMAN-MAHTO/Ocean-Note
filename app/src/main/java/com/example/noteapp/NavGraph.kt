@@ -18,6 +18,7 @@ import com.example.noteapp.auth.presentation.sign_in.SignInViewModel
 import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.example.noteapp.note.presentation.screens.DocumentListScreen
 import com.example.noteapp.note.presentation.screens.DocumentScreen
+import com.example.noteapp.note.presentation.screens.ManageAccessScreen
 import com.example.noteapp.note.presentation.screens.ShareScreen
 
 
@@ -96,14 +97,24 @@ fun NavGraph(
         }
 
         composable(
-            Screen.DocumentList.route
-        ) {
+            Screen.DocumentList.route,
+
+            ) {
             DocumentListScreen(navHostController = navHostController)
         }
         composable(
-            Screen.Share.route
+            Screen.Share.route,
+            arguments = listOf(navArgument(SHARE_SCREEN_ARGUMENT_ID) { defaultValue = "" })
+
         ) {
             ShareScreen(navHostController)
+        }
+        composable(
+            Screen.ManageAccess.route,
+            arguments = listOf(navArgument(MANAGE_ACCESS_SCREEN_ARGUMENT_ID) { defaultValue = "" })
+
+        ) {
+            ManageAccessScreen(navHostController = navHostController)
         }
 
     }

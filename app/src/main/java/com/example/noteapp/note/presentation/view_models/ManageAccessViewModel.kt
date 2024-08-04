@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noteapp.DOCUMENT_SCREEN_ARGUMENT_ID
+import com.example.noteapp.MANAGE_ACCESS_SCREEN_ARGUMENT_ID
 import com.example.noteapp.Permission
 import com.example.noteapp.auth.domain.model.copyUser
 import com.example.noteapp.note.domain.models.ShareHolder
@@ -22,7 +23,11 @@ class ManageAccessViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    private val _docId = MutableStateFlow(savedStateHandle.get<String>(DOCUMENT_SCREEN_ARGUMENT_ID))
+    private val _docId = MutableStateFlow(
+        savedStateHandle.get<String>(
+            MANAGE_ACCESS_SCREEN_ARGUMENT_ID
+        )
+    )
     val docId = _docId.asStateFlow()
     val _state = MutableStateFlow(ManageAccessState())
     val state = _state.asStateFlow()
@@ -45,8 +50,24 @@ class ManageAccessViewModel @Inject constructor(
 
 
     }
+
+    fun onClickPeople(shareHolder: ShareHolder) {
+        _state.value = _state.value.copy(
+            showBottomSheet = true,
+            selectedPeople = shareHolder,
+        )
+
+    }
+
+    fun onDismissRequestBottomSheet() {
+        _state.value = _state.value.copy(
+            showBottomSheet = false
+        )
+    }
 }
 
 data class ManageAccessState(
     var peopleWithAcess: List<ShareHolder> = emptyList(),
+    val showBottomSheet: Boolean = false,
+    val selectedPeople: ShareHolder = ShareHolder("", ""),
 )

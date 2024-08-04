@@ -61,7 +61,8 @@ fun DocumentScreen(
         onClickDelete = viewModel::onClickDelete,
         onDeleteAlertDialogConfirmation = viewModel::onDeleteAlertDialogConfirmation,
         onDeleteAlertDialogDismissRequest = viewModel::onDeleteAlertDialogDismissRequest,
-        onClickShare = { navHostController.navigate(Screen.Share.route) },
+        onClickShare = { navHostController.navigate(Screen.Share.setId(viewModel.docId.value.toString())) },
+        onClickManageAccess = { navHostController.navigate(Screen.ManageAccess.setId(viewModel.docId.value.toString())) },
         onDismissShareDialogRequest = viewModel::onDismissShareDialogRequest,
         navHostController = navHostController,
 
@@ -82,6 +83,7 @@ fun DocumentContent(
     onDeleteAlertDialogDismissRequest: () -> Unit,
     onDeleteAlertDialogConfirmation: (navHostController: NavHostController) -> Unit,
     onClickShare: () -> Unit,
+    onClickManageAccess: () -> Unit,
     onDismissShareDialogRequest: () -> Unit,
     navHostController: NavHostController,
 
@@ -156,7 +158,7 @@ fun DocumentContent(
                                     })
                                 DropdownMenuItem(onClick = {
                                     expanded = false
-                                    onClickShare()
+                                    onClickManageAccess()
                                 }, text = {
                                     Text("Manage Access")
                                 },

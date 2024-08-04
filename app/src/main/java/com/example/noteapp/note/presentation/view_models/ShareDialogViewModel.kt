@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.example.noteapp.DOCUMENT_SCREEN_ARGUMENT_ID
 import com.example.noteapp.Permission
+import com.example.noteapp.SHARE_SCREEN_ARGUMENT_ID
 import com.example.noteapp.auth.domain.model.copyUser
 import com.example.noteapp.note.domain.models.ShareHolder
 import com.example.noteapp.note.domain.models.Shared
@@ -25,7 +26,7 @@ class ShareDialogViewModel @Inject constructor(
 
 
     ) : ViewModel() {
-    private val _docId = MutableStateFlow(savedStateHandle.get<String>(DOCUMENT_SCREEN_ARGUMENT_ID))
+    private val _docId = MutableStateFlow(savedStateHandle.get<String>(SHARE_SCREEN_ARGUMENT_ID))
     val docId = _docId.asStateFlow()
     fun onQueryChange(s: String) {
         _state.value = _state.value.copy(
