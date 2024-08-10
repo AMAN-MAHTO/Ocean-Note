@@ -107,7 +107,6 @@ dependencies {
     implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc01")
     implementation(kotlin("reflect"))
 
-
 }
 // Allow references to generated code
 kapt {

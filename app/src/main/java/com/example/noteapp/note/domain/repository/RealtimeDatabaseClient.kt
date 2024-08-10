@@ -1,12 +1,13 @@
 package com.example.noteapp.note.domain.repository
 
+import com.example.noteapp.auth.domain.model.UserData
 import com.example.noteapp.note.domain.models.Document
 import com.example.noteapp.note.domain.models.EditorRelamChild
 import com.google.firebase.database.DatabaseReference
 
 interface RealtimeDatabaseClient {
 
-    suspend fun addDocument(document: Document): String
+    suspend fun addDocument(document: Document, userData: UserData): String
     suspend fun updateDocument(document: Document)
     suspend fun deleteDocumentById(_docId: String)
     suspend fun updateDocumentVersion(document: Document)

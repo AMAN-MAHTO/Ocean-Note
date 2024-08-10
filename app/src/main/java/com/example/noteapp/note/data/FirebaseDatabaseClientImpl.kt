@@ -24,24 +24,24 @@ class FirebaseDatabaseClientImpl @Inject constructor(
     rdb: FirebaseDatabase
 ) : RealtimeDatabaseClient {
 
-    private var userData: UserData? = null
+    //    private var userData: UserData? = null
     private var documentCollectionRef: DatabaseReference? = null
     private var editorRealmRef: DatabaseReference? = null
     private var editorRealmListener: ValueEventListener? = null
 
     init {
-        userData = googleAuthUiClient.getSignedInUser()
-        if (userData != null) {
-            documentCollectionRef = rdb.getReference("Version")
-            editorRealmRef = rdb.getReference("Editor_Realm")
-            documentCollectionRef!!.keepSynced(true)
-            editorRealmRef!!.keepSynced(true)
+//        userData = googleAuthUiClient.getSignedInUser()
+//        if (userData != null) {
+        documentCollectionRef = rdb.getReference("Version")
+        editorRealmRef = rdb.getReference("Editor_Realm")
+        documentCollectionRef!!.keepSynced(true)
+        editorRealmRef!!.keepSynced(true)
 
-        }
+//        }
 
     }
 
-    override suspend fun addDocument(document: Document): String {
+    override suspend fun addDocument(document: Document, userData: UserData): String {
         var docId = ""
         Log.d(TAG1, "addDocument: ")
         try {
@@ -60,11 +60,8 @@ class FirebaseDatabaseClientImpl @Inject constructor(
                     )
                         .addOnFailureListener {
                             Log.d(TAG1, "addDocument: $it")
-
                         }.addOnSuccessListener {
                             Log.d(TAG1, "addDocument: sucess")
-
-
                         }
 
                     dbRef.child(it).child("sharedIdList").setValue("")

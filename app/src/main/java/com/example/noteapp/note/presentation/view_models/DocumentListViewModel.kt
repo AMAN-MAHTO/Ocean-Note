@@ -3,7 +3,9 @@ package com.example.noteapp.note.presentation.view_models
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.noteapp.Permission
 import com.example.noteapp.Screen
 import com.example.noteapp.auth.data.GoogleAuthUiClient
 import com.example.noteapp.auth.domain.model.UserData
@@ -14,6 +16,7 @@ import com.example.noteapp.note.domain.repository.RealtimeDatabaseClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,38 +28,53 @@ class DocumentListViewModel @Inject constructor(
 
     ) : ViewModel() {
 
-    private val _userData = googleAuthUiClient.getSignedInUser()
 
-    private val _ownedDocuments = MutableStateFlow(emptyList<Document>())
-    val ownedDocuments = _ownedDocuments.asStateFlow()
-
-    private val _sharedDocument = MutableStateFlow(emptyList<Document>())
-    val sharedDocument = _sharedDocument.asStateFlow()
-
-    private val _sharedCardList = MutableStateFlow(listOf<Shared>())
-
-    private val _isProfileView = MutableStateFlow(false)
-    val isProfileView = _isProfileView.asStateFlow()
+    private val _state =
+        MutableStateFlow(DocumentListState(userData = googleAuthUiClient.getSignedInUser()))
+    val state = _state.asStateFlow()
 
     init {
+        _state.update {
+            DocumentListState(userData = googleAuthUiClient.getSignedInUser())
+        }
+        Log.d("Document", "owned doc: ${_state.value.userData}")
+
         viewModelScope.launch {
-            dbClient.getRealtimeDocumentOwned {
-                Log.d("Document", "owned doc: $it")
-                _ownedDocuments.value = emptyList()
-                _ownedDocuments.value = it
+
+
+            _state.value.userData?.let {
+                dbClient.getRealtimeDocumentOwned(userData = it) { documents ->
+                    //                Log.d("Document", "owned doc: $documents")
+
+                    _state.update {
+                        it.copy(
+                            ownedDocuments = documents
+                        )
+                    }
+                }
             }
 
-            dbClient.getRealtimeSharedDocumentOfCurrentUser(
-                sharedListner = {
-                    _sharedCardList.value = emptyList()
-                    _sharedCardList.value = it
-                },
-                docListner = {
-                    Log.d("Document", "shared doc: $it")
-                    _sharedDocument.value = emptyList()
-                    _sharedDocument.value = it
+            _state.value.userData?.let {
+                dbClient.getRealtimeSharedDocumentOfCurrentUser(
+                    userData = it,
+                    sharedListner = { documents ->
+                        //                    Log.d("Document", "shared card: $documents")
+                        _state.update {
+                            it.copy(
+                                sharedCardList = documents
+                            )
+                        }
+                    },
+                    docListner = { documents ->
+                        //                    Log.d("Document", "shared doc: $documents")
+                        _state.update {
+                            it.copy(
+                                sharedDocuments = documents
+                            )
+                        }
+                    })
+            }
 
-                })
 
         }
     }
@@ -65,37 +83,177 @@ class DocumentListViewModel @Inject constructor(
         Log.d("Document", "onClickFAB ")
 
         viewModelScope.launch {
-            val docId = dbClient.addDocument(Document())
+            navHostController.navigate(Screen.Document.setId(""))
 
-            Log.d("Document", "onClickFAB: new doc id ${docId}")
 
-            navHostController.navigate(Screen.Document.setId(docId))
         }
 
     }
 
-    fun getUserData(): UserData? {
-        return _userData
-    }
 
     fun onDismissProfileDialogRequest() {
-        _isProfileView.value = false
+        _state.update {
+            it.copy(
+
+                isProfileView = false
+            )
+        }
     }
 
     fun onProfileDialogRequest() {
-        _isProfileView.value = true
+        _state.update {
+            it.copy(
+                isProfileView = true
+            )
+        }
     }
 
-    fun onLogout() {
+    fun onLogout(navHostController: NavHostController) {
         viewModelScope.launch {
 
             googleAuthUiClient.signOut()
-            _isProfileView.value = false
+            _state.update {
+                it.copy(
+                    isProfileView = false
+                )
+            }
+            navHostController.navigate(Screen.SignIn.route) {
+                popUpTo(navHostController.graph.id) {
+                    inclusive = true
+                }
+            }
+        }
+    }
+
+    fun onClickShortByItem(filterDoc: FilterDoc) {
+        _state.update {
+            it.copy(
+                filter = filterDoc,
+                showSortBySheet = false
+
+            )
+        }
+    }
+
+    fun onDismissShortBySheet() {
+        _state.update {
+            it.copy(
+                showSortBySheet = false
+            )
+        }
+    }
+
+    fun onClickshortBy() {
+        _state.update {
+            it.copy(
+                showSortBySheet = true
+            )
+        }
+    }
+
+    fun onLongClickDoc(docId: String) {
+        if (_state.value.ownedDocuments.any { it.id == docId })
+            _state.update {
+                it.copy(
+                    showDocActionSheet = true,
+                    docActionSheetId = docId,
+                )
+            }
+
+    }
+
+    fun onDismissDocActionSheet() {
+        _state.update {
+            it.copy(
+                showDocActionSheet = false,
+                docActionSheetId = null,
+            )
+        }
+    }
+
+    fun onClickDocActionItem(docActions: DocActions, navHostController: NavHostController) {
+        _state.update {
+            it.copy(
+                showDocActionSheet = false,
+            )
+        }
+        if (_state.value.ownedDocuments.any { it.id == _state.value.docActionSheetId }) {
+            when (docActions) {
+                DocActions.SHARE -> viewModelScope.launch {
+                    _state.value.docActionSheetId?.let {
+                        navHostController.navigate(
+                            Screen.Share.setId(
+                                it
+                            )
+                        )
+                    }
+                }
+
+                DocActions.MANAGE_ACCESS -> viewModelScope.launch {
+                    _state.value.docActionSheetId?.let {
+                        navHostController.navigate(
+                            Screen.ManageAccess.setId(
+                                it
+                            )
+                        )
+                    }
+                }
+
+                DocActions.DELETE -> _state.update {
+                    it.copy(
+                        showDeleteAlertBox = true
+                    )
+                }
+            }
+        }
+
+    }
+
+    fun onDismissDeleteActionDialog() {
+        _state.update {
+            it.copy(
+                showDeleteAlertBox = false
+            )
+        }
+    }
+
+    fun onDeleteAlertConformation() {
+        if (_state.value.ownedDocuments.any { it.id == _state.value.docActionSheetId }) {
+            viewModelScope.launch {
+
+                dbClient.deleteDocumentById(_state.value.docActionSheetId!!)
+                _state.update {
+                    it.copy(
+                        showDeleteAlertBox = false
+                    )
+                }
+            }
         }
     }
 
 
 //
+}
+
+data class DocumentListState(
+    val ownedDocuments: List<Document> = emptyList(),
+    val sharedDocuments: List<Document> = emptyList(),
+    val sharedCardList: List<Shared> = emptyList(),
+    val isProfileView: Boolean = false,
+    val userData: UserData?,
+    val filter: FilterDoc = FilterDoc.LAST_UPDATED,
+    val showSortBySheet: Boolean = false,
+    val showDocActionSheet: Boolean = false,
+    val docActionSheetId: String? = null,
+    val showDeleteAlertBox: Boolean = false,
+)
+
+enum class FilterDoc {
+    LAST_UPDATED, NAME
+}
+
+enum class DocActions {
+    SHARE, MANAGE_ACCESS, DELETE
 }
 
 fun generateFakeDocuments(): List<Document> {

@@ -1,4 +1,5 @@
 package com.example.compose
+
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -10,9 +11,13 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import com.example.ui.theme.AppTypography
 
 private val lightScheme = lightColorScheme(
@@ -262,20 +267,47 @@ fun AppTheme(
     dynamicColor: Boolean = true,
     content: @Composable() () -> Unit
 ) {
-  val colorScheme = when {
-//      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-//          val context = LocalContext.current
-//          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-//      }
-      
-      darkTheme -> darkScheme
-      else -> lightScheme
-  }
+    val colors = if (isSystemInDarkTheme()) {
+        listOf(
+            Color(0xFF0073A3), // Dark blue gradient start
+            Color(0xFF005377), // Dark blue gradient middle
+            Color(0xFF003F5C), // Dark blue gradient middle
+            Color(0xFF002B3F)
+        )
+    } else {
+        listOf(
+            Color(0xFF72B8FF),
+            Color(0xFF619FFF),
+            Color(0xFF4C8CFF),
+            Color(0xFF325899),
+        )
+    }
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = AppTypography,
-    content = content
-  )
+    val colorScheme = when {
+//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+//            val context = LocalContext.current
+//            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+//        }
+
+        darkTheme -> darkScheme
+        else -> lightScheme
+    }
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val activity  = view.context as Activity
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                activity.window.navigationBarColor = colorScheme.primary.copy(alpha = 0.08f).compositeOver(colorScheme.surface.copy()).toArgb()
+                activity.window.statusBarColor = colorScheme.background.toArgb()
+                WindowCompat.getInsetsController(activity.window, view).isAppearanceLightStatusBars = !darkTheme
+                WindowCompat.getInsetsController(activity.window, view).isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = AppTypography,
+        content = content
+    )
 }
 

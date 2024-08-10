@@ -64,7 +64,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun ManageAccessScreen(
     navHostController: NavHostController,
-
     viewModel: ManageAccessViewModel = hiltViewModel(),
 ) {
 
@@ -76,7 +75,6 @@ fun ManageAccessScreen(
         onDismissRequestBottomSheet = viewModel::onDismissRequestBottomSheet,
         onClickRemovePeople = viewModel::onClickRemovePeople
     )
-
 
 }
 
@@ -175,90 +173,107 @@ fun ManageAccessScreenContent(
         }
         if (state.value.showBottomSheet) {
             ModalBottomSheet(
-
                 dragHandle = {},
                 onDismissRequest = onDismissRequestBottomSheet,
                 sheetState = sheetState,
 
                 ) {
                 // Sheet content
-                Column (
-                    modifier = Modifier.padding(start = 16.dp,end = 16.dp,top = 16.dp, bottom = 32.dp),
+                Column(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        bottom = 32.dp
+                    ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
-                ){
+                ) {
 
 
                     val it = state.value.selectedPeople
+                    if (it != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        if (it.profilePic != null) {
-                            AsyncImage(
-                                model = it.profilePic,
-                                contentDescription = "Profile picture",
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Fit
-                            )
+                            if (it.profilePic != null) {
+                                AsyncImage(
+                                    model = it.profilePic,
+                                    contentDescription = "Profile picture",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+
+
+                            if (it.email != null) {
+                                Text(
+                                    text = it.email,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+
+
                         }
 
-                        if (it.email != null) {
-                            Text(
-                                text = it.email,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
 
 
+
+                        HorizontalDivider()
+
+                        NavigationDrawerItem(
+                            label = { Text("Read") },
+                            onClick = { onClickPermission(it, Permission.READ) },
+                            selected = it.permissionType == Permission.READ.toString(),
+                            icon = {
+                                if (it.permissionType == Permission.READ.toString()) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null)
+                                } else {
+                                    Icon(
+                                        Icons.Default.CheckBoxOutlineBlank,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Write") },
+                            onClick = { onClickPermission(it, Permission.WRITE) },
+                            selected = it.permissionType == Permission.WRITE.toString(),
+                            icon = {
+                                if (it.permissionType == Permission.WRITE.toString()) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null)
+                                } else {
+                                    Icon(
+                                        Icons.Default.CheckBoxOutlineBlank,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                        )
+                        HorizontalDivider()
+                        NavigationDrawerItem(
+                            label = { Text("Remove") },
+                            onClick = { onClickRemovePeople(it) },
+                            selected = false,
+                            icon = {
+                                Icon(Icons.Default.Close, contentDescription = null)
+                            }
+
+                        )
 
                     }
 
 
-
-
-                    HorizontalDivider()
-
-                    NavigationDrawerItem(
-                        label = { Text("Read") },
-                        onClick = { onClickPermission(it, Permission.READ) },
-                        selected = it.permissionType == Permission.READ.toString(),
-                        icon = { if(it.permissionType == Permission.READ.toString()) {
-                            Icon(Icons.Outlined.Check, contentDescription = null)
-                        } else{
-                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null)
-                        }},
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Write") },
-                        onClick = { onClickPermission(it,Permission.WRITE) },
-                        selected = it.permissionType == Permission.WRITE.toString(),
-                        icon = { if(it.permissionType == Permission.WRITE.toString()) {
-                            Icon(Icons.Outlined.Check, contentDescription = null)
-                        } else{
-                            Icon(Icons.Default.CheckBoxOutlineBlank, contentDescription = null)
-                        }},
-                    )
-                    HorizontalDivider()
-                    NavigationDrawerItem(
-                        label = { Text("Remove") },
-                        onClick = { onClickRemovePeople(it)},
-                        selected = false,
-                        icon = {
-                            Icon(Icons.Default.Close, contentDescription = null)}
-
-                    )
-
-
-
-
-            }}
+                }
+            }
         }
 
     }

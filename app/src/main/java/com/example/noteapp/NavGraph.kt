@@ -56,7 +56,6 @@ fun NavGraph(
         composable(
             Screen.SignIn.route
         ) {
-
             // if the google sign_in is successful
             LaunchedEffect(key1 = state.isSignInSuccessful) {
                 if (state.isSignInSuccessful) {
@@ -65,10 +64,7 @@ fun NavGraph(
                     navHostController.navigate(Screen.DocumentList.route)
                     signInViewModel.resetState()
                 }
-
             }
-
-
 
             SignIn(
                 onGoogleSignIn = {
@@ -91,7 +87,6 @@ fun NavGraph(
             arguments = listOf(navArgument(DOCUMENT_SCREEN_ARGUMENT_ID) { defaultValue = "" })
         ) {
             DocumentScreen(
-                onClickBack = navHostController::popBackStack,
                 navHostController = navHostController
             )
         }

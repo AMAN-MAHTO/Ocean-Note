@@ -12,11 +12,14 @@ import com.example.noteapp.note.domain.models.ShareHolder
 import com.example.noteapp.note.domain.repository.DatabaseClient2
 import com.example.noteapp.note.domain.repository.RealtimeDatabaseClient
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.internal.wait
 import javax.inject.Inject
+
 
 @HiltViewModel
 class ManageAccessViewModel @Inject constructor(
@@ -24,78 +27,76 @@ class ManageAccessViewModel @Inject constructor(
     private val dbClient: DatabaseClient2
 ) : ViewModel() {
 
-
     private val _docId = MutableStateFlow(
-        savedStateHandle.get<String>(
-            MANAGE_ACCESS_SCREEN_ARGUMENT_ID
-        )
+        savedStateHandle.get<String>(MANAGE_ACCESS_SCREEN_ARGUMENT_ID)
     )
     val docId = _docId.asStateFlow()
-    val _state = MutableStateFlow(ManageAccessState())
+    private val _state = MutableStateFlow(ManageAccessState())
     val state = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
             _docId.value?.let {
-
                 dbClient.getRealtimeShareHolderOfGivenDocument(it) { data ->
-                    _state.value = _state.value.copy(
-                        peopleWithAcess = data
-                    )
+                    updatePeopleWithAccess(data)
                 }
             }
         }
-
     }
 
     fun onClickPermission(shareHolder: ShareHolder, permission: Permission) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(
-                showBottomSheet = false
-            )
-            dbClient.updateSharedPermission(shareHolder,permission)
-            _docId.value?.let {
-                dbClient.getRealtimeShareHolderOfGivenDocument(it) {
-                    _state.value = _state.value.copy(
-                        peopleWithAcess = it
-                    )
-                }
-            }
+            _state.update { it.copy(showBottomSheet = false) }
+            dbClient.updateSharedPermission(shareHolder, permission)
+            refreshShareholders()
         }
-
     }
 
     fun onClickPeople(shareHolder: ShareHolder) {
-        _state.value = _state.value.copy(
-            showBottomSheet = true,
-            selectedPeople = shareHolder,
-        )
-
+        _state.update {
+            it.copy(
+                showBottomSheet = true,
+                selectedPeople = shareHolder,
+            )
+        }
     }
 
     fun onDismissRequestBottomSheet() {
-        _state.value = _state.value.copy(
-            showBottomSheet = false
-        )
+        _state.update { it.copy(showBottomSheet = false) }
     }
 
     fun onClickRemovePeople(shareHolder: ShareHolder) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(
-                showBottomSheet = false
-            )
-            dbClient.deleteSharedPermission(shareHolder)
-            _state.update {
-                _state.value.copy(
-                    peopleWithAcess = listOf(),
-                )
+            _state.update { it.copy(showBottomSheet = false) }
+            dbClient.deleteSharedPermission(shareHolder) {
+
+                refreshShareholders()
             }
         }
+    }
+
+    private fun refreshShareholders() {
+        viewModelScope.launch {
+
+            _docId.value?.let {
+                dbClient.getRealtimeShareHolderOfGivenDocument(it) { data ->
+                    updatePeopleWithAccess(data)
+                }
+            }
+        }
+    }
+
+    private fun updatePeopleWithAccess(data: List<ShareHolder>) {
+        // Remove duplicates by using a set to track seen ids
+        val uniqueShareholders = data.distinctBy { it.sharedId }
+        _state.update { it.copy(peopleWithAcess = uniqueShareholders) }
+        // Log the updated state for debugging
+        println("Updated peopleWithAcess: ${_state.value.peopleWithAcess}")
     }
 }
 
 data class ManageAccessState(
     var peopleWithAcess: List<ShareHolder> = emptyList(),
-    val showBottomSheet: Boolean = true,
-    val selectedPeople: ShareHolder = ShareHolder("1", "2", email = "amanmahto@gmail.com"),
+    val showBottomSheet: Boolean = false,
+    val selectedPeople: ShareHolder? = null,
 )

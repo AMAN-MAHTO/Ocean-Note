@@ -21,30 +21,35 @@ val TAG = "FirebaseDBImpl"
 class FirebaseFirestoreClientImpl @Inject constructor(
     googleAuthUiClient: GoogleAuthUiClient,
     db: FirebaseFirestore,
-
-    ) : DatabaseClient2 {
+) : DatabaseClient2 {
     private var documentsCollectionReference: CollectionReference? = null
     private var sharedCollectionReference: CollectionReference? = null
     private var userCollectionReference: CollectionReference? = null
     private var versionCollectionReference: CollectionReference? = null
 
-    private var userData: UserData? = null
+//    private var userData: UserData? = null
 
     init {
-        userData = googleAuthUiClient.getSignedInUser()
-        if (userData != null) {
+//        userData = googleAuthUiClient.getSignedInUser()
+//        Log.d("Document", "FirebaseFirestoreClientImpl doc: ${userData}")
 
-            documentsCollectionReference = db.collection("documents")
-            sharedCollectionReference = db.collection("shared")
-            userCollectionReference = db.collection("users")
-            versionCollectionReference = db.collection("versions")
-        }
+//        if (userData != null) {
+        documentsCollectionReference = db.collection("documents")
+        sharedCollectionReference = db.collection("shared")
+        userCollectionReference = db.collection("users")
+        versionCollectionReference = db.collection("versions")
+//        }
     }
 
-    override suspend fun addDocument(document: Document): String {
+
+    override suspend fun addDocument(
+        document: Document,
+        userData: UserData,
+        listener: (docId: String) -> Unit
+    ): String {
         var docId = ""
         documentsCollectionReference?.let {
-            docId = it.add(document.copy(ownerId = userData!!.userId)).await().id
+            docId = it.add(document.copy(ownerId = userData.userId)).await().id
         }
 
         documentsCollectionReference?.let {
@@ -52,7 +57,9 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                 mapOf(
                     "id" to docId
                 )
-            ).await()
+            ).addOnSuccessListener {
+                listener(docId)
+            }
         }
         return docId
     }
@@ -80,7 +87,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         }
     }
 
-    override suspend fun addShared(shared: Shared): String {
+    override suspend fun addShared(shared: Shared, userData: UserData): String {
         var sharedId = ""
         try {
 
@@ -124,12 +131,12 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         return sharedId
     }
 
-    override suspend fun addEditor(document: Document) {
+    override suspend fun addEditor(document: Document, userData: UserData) {
         try {
             documentsCollectionReference?.let { docRef ->
                 docRef.document(document.id).get().await().toObject<Document>()?.let {
                     val editor = it.currentEditors.toMutableList()
-                    editor.add(userData!!.userId)
+                    userData.email?.let { it1 -> editor.add(it1) }
                     docRef.document(document.id).update(
                         mapOf(
                             "currentEditors" to editor
@@ -142,12 +149,16 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         }
     }
 
-    override suspend fun removeEditor(document: Document, listener: () -> Unit) {
+    override suspend fun removeEditor(
+        document: Document,
+        userData: UserData,
+        listener: () -> Unit
+    ) {
         try {
             documentsCollectionReference?.let { docRef ->
                 docRef.document(document.id).get().await().toObject<Document>()?.let {
                     val editor = it.currentEditors.toMutableList()
-                    editor.remove(userData!!.userId)
+                    editor.remove(userData!!.email)
                     docRef.document(document.id).update(
                         mapOf(
                             "currentEditors" to editor
@@ -196,7 +207,11 @@ class FirebaseFirestoreClientImpl @Inject constructor(
 
     }
 
-    override suspend fun getSharedCard(docId: String, listener: (Shared) -> Unit) {
+    override suspend fun getSharedCard(
+        docId: String,
+        userData: UserData,
+        listener: (Shared) -> Unit
+    ) {
         sharedCollectionReference?.let {
             try {
                 it.whereEqualTo("documentId", docId).whereEqualTo("sharedWith", userData!!.email)
@@ -217,7 +232,10 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         }
     }
 
-    override suspend fun getRealtimeDocumentOwned(listener: (List<Document>) -> Unit) {
+    override suspend fun getRealtimeDocumentOwned(
+        userData: UserData,
+        listener: (List<Document>) -> Unit
+    ) {
         documentsCollectionReference?.let {
             try {
                 it.whereEqualTo("ownerId", userData!!.userId).addSnapshotListener { snapshot, e ->
@@ -229,11 +247,8 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                     if (snapshot != null && !snapshot.isEmpty) {
 
                         snapshot.documents.forEach { documentSnapshot ->
-
                             documentSnapshot.toObject<Document>()?.let { result.add(it) }
-
                         }
-
                     } else {
                         Log.d(TAG, "Current data RealtimeDocumentOwned: null")
                     }
@@ -247,6 +262,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
 
     // it get all the document that have been shared with current user
     override suspend fun getRealtimeSharedDocumentOfCurrentUser(
+        userData: UserData,
         sharedListner: (List<Shared>) -> Unit,
         docListner: (List<Document>) -> Unit
     ) {
@@ -374,6 +390,53 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         }
     }
 
+    override suspend fun getEditorProfile(
+        docId: String,
+        listener: (List<copyUser>) -> Unit
+    ) {
+        val usersList: MutableList<copyUser> = mutableListOf()
+        var userEmailList: List<String> = emptyList()
+        try {
+            documentsCollectionReference?.let {
+                it.whereEqualTo("id", docId).addSnapshotListener { snapshot, e ->
+                    if (e != null) {
+                        Log.e("getEditorProfile", "listern Failed: $e")
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null)
+                        snapshot?.documents?.forEach { documentSnapshot ->
+                            documentSnapshot.toObject<Document>()?.let { document ->
+
+                                userEmailList = document.currentEditors
+                            }
+                        }
+                    userCollectionReference?.let {
+                        it.whereIn("email", userEmailList)
+                            .addSnapshotListener { snapshot, e ->
+                                if (e != null) {
+                                    Log.e("Document", "listern Failed: $e")
+                                    return@addSnapshotListener
+                                }
+                                snapshot?.documents?.forEach { documentSnapshot ->
+                                    documentSnapshot.toObject<copyUser>()?.let { copyUser ->
+
+                                        usersList.add(
+                                            copyUser
+                                        )
+                                    }
+                                }
+                                listener(usersList)
+                            }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("Document", "getEditorProfile: $e")
+        }
+
+
+    }
+
     override suspend fun updateSharedPermission(shareHolder: ShareHolder, permission: Permission) {
         try {
             sharedCollectionReference?.let {
@@ -388,10 +451,12 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteSharedPermission(shareHolder: ShareHolder) {
+    override suspend fun deleteSharedPermission(shareHolder: ShareHolder, listener: () -> Unit) {
         try {
             sharedCollectionReference?.let {
-                it.document(shareHolder.sharedId).delete()
+                it.document(shareHolder.sharedId).delete().addOnSuccessListener {
+                    listener()
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "deleteSharedPermission: error $e")

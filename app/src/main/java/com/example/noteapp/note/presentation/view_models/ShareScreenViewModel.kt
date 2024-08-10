@@ -5,9 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.example.noteapp.DOCUMENT_SCREEN_ARGUMENT_ID
 import com.example.noteapp.Permission
 import com.example.noteapp.SHARE_SCREEN_ARGUMENT_ID
+import com.example.noteapp.auth.data.GoogleAuthUiClient
+import com.example.noteapp.auth.domain.model.UserData
 import com.example.noteapp.auth.domain.model.copyUser
 import com.example.noteapp.note.domain.models.ShareHolder
 import com.example.noteapp.note.domain.models.Shared
@@ -20,31 +21,37 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ShareDialogViewModel @Inject constructor(
+class ShareScreenViewModel @Inject constructor(
     private val dbClient: DatabaseClient2,
     savedStateHandle: SavedStateHandle,
-
+    googleAuthUiClient: GoogleAuthUiClient,
 
     ) : ViewModel() {
     private val _docId = MutableStateFlow(savedStateHandle.get<String>(SHARE_SCREEN_ARGUMENT_ID))
     val docId = _docId.asStateFlow()
     fun onQueryChange(s: String) {
-        _state.value = _state.value.copy(
-            query = s,
-
-            )
-        if (s.isEmpty()) {
-            _state.value = _state.value.copy(
+        _state.update {
+            it.copy(
                 query = s,
-                result = emptyList()
-            )
+
+                )
+        }
+        if (s.isEmpty()) {
+            _state.update {
+                it.copy(
+                    query = s,
+                    result = emptyList()
+                )
+            }
         } else {
 
             viewModelScope.launch {
-                dbClient.getRealtimeSearch(_state.value.query) {
-                    _state.value = _state.value.copy(
-                        result = it
-                    )
+                dbClient.getRealtimeSearch(_state.value.query) { result ->
+                    _state.update {
+                        it.copy(
+                            result = result
+                        )
+                    }
                 }
                 Log.d("Search", "onQueryChange: ${_state.value}")
             }
@@ -82,30 +89,34 @@ class ShareDialogViewModel @Inject constructor(
         viewModelScope.launch {
             for (i in _state.value.selectedElement) {
                 if (i.email != null) {
-                    dbClient.addShared(
-                        Shared(
-                            sharedWith = i.email!!,
-                            documentId = _docId.value ?: "",
-                            permissionType = _state.value.permissionType.toString(),
+                    _state.value.userData?.let {
+                        dbClient.addShared(
+                            Shared(
+                                sharedWith = i.email!!,
+                                documentId = _docId.value ?: "",
+                                permissionType = _state.value.permissionType.toString(),
+                            ),
+                            it
                         )
-                    )
-                    _state.value = ShareDialogState()
-                    navHostController.popBackStack()
+                    }
 
 
                 }
             }
+            navHostController.popBackStack()
         }
     }
 
     fun onClickSelecteElementClose(element: copyUser) {
         val list = _state.value.selectedElement.toMutableList()
         list.remove(element)
-        _state.value = _state.value.copy(
-            selectedElement = list,
-            query = "",
-            result = emptyList()
-        )
+        _state.update {
+            it.copy(
+                selectedElement = list,
+                query = "",
+                result = emptyList()
+            )
+        }
     }
 
     fun onClickDropDownPermission(shareHolder: ShareHolder, permission: Permission) {
@@ -116,22 +127,27 @@ class ShareDialogViewModel @Inject constructor(
     }
 
     fun changeStatePermission(permission: Permission) {
-        _state.value = _state.value.copy(
-            permissionType = permission
-        )
+        _state.update {
+            it.copy(
+                permissionType = permission
+            )
+        }
     }
 
-    private val _state = MutableStateFlow(ShareDialogState())
+    private val _state =
+        MutableStateFlow(ShareDialogState(userData = googleAuthUiClient.getSignedInUser()))
     val state = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
             _docId.value?.let {
 
-                dbClient.getRealtimeShareHolderOfGivenDocument(it) {
-                    _state.value = _state.value.copy(
-                        peopleWithAcess = it
-                    )
+                dbClient.getRealtimeShareHolderOfGivenDocument(it) { peopleWithAccess ->
+                    _state.update {
+                        it.copy(
+                            peopleWithAcess = peopleWithAccess
+                        )
+                    }
                 }
             }
         }
@@ -142,6 +158,7 @@ class ShareDialogViewModel @Inject constructor(
 
 data class ShareDialogState(
     var query: String = "",
+    val userData: UserData? = null,
     var peopleWithAcess: List<ShareHolder> = emptyList(),
     var result: List<copyUser> = emptyList(),
     var selectedElement: MutableList<copyUser> = mutableListOf(),

@@ -30,12 +30,13 @@ import kotlin.math.log
 class SignInViewModel @Inject constructor(
     private val googleAuthUiClient: GoogleAuthUiClient,
 
-): ViewModel() {
+    ) : ViewModel() {
     private val db: FirebaseFirestore
-    init {
-         db= Firebase.firestore
 
+    init {
+        db = Firebase.firestore
     }
+
     val email = MutableStateFlow("")
 
     val password = MutableStateFlow("")
@@ -44,34 +45,37 @@ class SignInViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     fun onSignInResult(result: SignInResult) {
-        if(result.isNewUser!!){
+        if (result.isNewUser!!) {
             viewModelScope.launch {
 
-            Log.d("SignIn", "onSignInResult: new user")
-            val user = googleAuthUiClient.getSignedInUser()
-            if(user != null ){
-                db.collection("users")?.let {
-                    val id=    it.add(copyUser(user.username,user.email,user.profilePictureUrl)).await().id
-                    Log.d("SignIn", "userCollection copy user id: $id")
-                    _state.update {
-                        it.copy(
-                            isSignInSuccessful = true,
-                            isNewUser = result.isNewUser,
-                            signInError = result.errorMessage,
-                        )
+                Log.d("SignIn", "onSignInResult: new user")
+                val user = googleAuthUiClient.getSignedInUser()
+                if (user != null) {
+                    db.collection("users")?.let {
+                        val id = it.add(copyUser(user.username, user.email, user.profilePictureUrl))
+                            .await().id
+                        Log.d("SignIn", "userCollection copy user id: $id")
+                        _state.update {
+                            it.copy(
+                                isSignInSuccessful = true,
+                                isNewUser = result.isNewUser,
+                                signInError = result.errorMessage,
+                            )
+                        }
                     }
+
                 }
-
-            }
             }
 
 
-        }else{
-            _state.update { it.copy(
-            isSignInSuccessful = result.data != null,
-            isNewUser = result.isNewUser!!,
-            signInError = result.errorMessage
-        ) }
+        } else {
+            _state.update {
+                it.copy(
+                    isSignInSuccessful = result.data != null,
+                    isNewUser = result.isNewUser!!,
+                    signInError = result.errorMessage
+                )
+            }
         }
         Log.d("SignIn", "onSignInResult: ${_state.value}")
     }
@@ -92,11 +96,6 @@ class SignInViewModel @Inject constructor(
     fun signIn() {
         Log.d("SignIn", "signUp: email:$email and password:$password ")
     }
-
-
-
-
-
 
 
 }
