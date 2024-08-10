@@ -88,7 +88,11 @@ class DocumentViewModel @Inject constructor(
     private suspend fun openDoc() {
         _docId.value?.let {
             dbClient.getRealtimeDocumentById(it) { document ->
-                _state.value.document = document
+                _state.update {
+                    it.copy(
+                        document = document
+                    )
+                }
                 viewModelScope.launch {
                     _docId.value?.let {
                         if (!_isEditorAdded) {
@@ -173,6 +177,7 @@ class DocumentViewModel @Inject constructor(
             )
         )
         viewModelScope.launch {
+            Log.d("Firebase", "onTitleChange: $title")
 
             val doc = _state.value.document
             rdbClient.updateEditorRealm(
