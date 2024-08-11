@@ -49,7 +49,8 @@ class FirebaseFirestoreClientImpl @Inject constructor(
     ): String {
         var docId = ""
         documentsCollectionReference?.let {
-            docId = it.add(document.copy(ownerId = userData.userId)).await().id
+            docId = it.add(document.copy(ownerId = userData.userId, ownerEmail = userData.email!!))
+                .await().id
         }
 
         documentsCollectionReference?.let {
@@ -205,6 +206,37 @@ class FirebaseFirestoreClientImpl @Inject constructor(
             Log.e(TAG, "addVersion: $e")
         }
 
+    }
+
+    override suspend fun getOwnerDataFromDocId(docId: String, listener: (copyUser) -> Unit) {
+        try {
+            documentsCollectionReference?.let { collectionRef ->
+                collectionRef.document(docId).get().addOnSuccessListener {
+                    val doc = it.toObject<Document>()
+                    Log.d("Document", "getOwnerDataFromDocId: $doc")
+                    if (doc != null) {
+                        userCollectionReference?.let {
+
+                            it.whereEqualTo("email", doc.ownerEmail)
+                                .addSnapshotListener { snapshot, e ->
+                                    if (e != null) {
+                                        Log.w(TAG, "Listen failed.", e)
+                                        return@addSnapshotListener
+                                    }
+                                    if (snapshot != null && !snapshot.isEmpty) {
+                                        snapshot.documents.forEach {
+                                            it.toObject<copyUser>()?.let(listener)
+                                        }
+                                    }
+                                }
+                        }
+                    }
+
+                }
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "failed ", e)
+        }
     }
 
     override suspend fun getSharedCard(
@@ -394,8 +426,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
         docId: String,
         listener: (List<copyUser>) -> Unit
     ) {
-        val usersList: MutableList<copyUser> = mutableListOf()
-        var userEmailList: List<String> = emptyList()
+
         try {
             documentsCollectionReference?.let {
                 it.whereEqualTo("id", docId).addSnapshotListener { snapshot, e ->
@@ -403,6 +434,7 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                         Log.e("getEditorProfile", "listern Failed: $e")
                         return@addSnapshotListener
                     }
+                    var userEmailList: List<String> = emptyList()
                     if (snapshot != null)
                         snapshot?.documents?.forEach { documentSnapshot ->
                             documentSnapshot.toObject<Document>()?.let { document ->
@@ -410,24 +442,27 @@ class FirebaseFirestoreClientImpl @Inject constructor(
                                 userEmailList = document.currentEditors
                             }
                         }
-                    userCollectionReference?.let {
-                        it.whereIn("email", userEmailList)
-                            .addSnapshotListener { snapshot, e ->
-                                if (e != null) {
-                                    Log.e("Document", "listern Failed: $e")
-                                    return@addSnapshotListener
-                                }
-                                snapshot?.documents?.forEach { documentSnapshot ->
-                                    documentSnapshot.toObject<copyUser>()?.let { copyUser ->
-
-                                        usersList.add(
-                                            copyUser
-                                        )
+                    if (userEmailList.isNotEmpty())
+                        userCollectionReference?.let {
+                            it.whereIn("email", userEmailList)
+                                .addSnapshotListener { snapshot, e ->
+                                    if (e != null) {
+                                        Log.e("Document", "listern Failed: $e")
+                                        return@addSnapshotListener
                                     }
+                                    val usersList: MutableList<copyUser> = mutableListOf()
+
+                                    snapshot?.documents?.forEach { documentSnapshot ->
+                                        documentSnapshot.toObject<copyUser>()?.let { copyUser ->
+
+                                            usersList.add(
+                                                copyUser
+                                            )
+                                        }
+                                    }
+                                    listener(usersList)
                                 }
-                                listener(usersList)
-                            }
-                    }
+                        }
                 }
             }
         } catch (e: Exception) {

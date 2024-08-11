@@ -159,7 +159,31 @@ fun DocumentContent(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy((-16).dp)
+                    ) {
+                        for (user in state.value.currentEditors)
+                            if (user.profilePic != null) {
+                                AsyncImage(
+                                    model = user.profilePic,
+                                    contentDescription = "Profile picture",
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+
+                                Icon(
+                                    painter = painterResource(id = R.drawable.user),
+                                    modifier = Modifier.size(18.dp),
+                                    contentDescription = "",
+                                    tint = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onClickBack) {

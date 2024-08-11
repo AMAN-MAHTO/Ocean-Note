@@ -4,6 +4,12 @@ import android.app.Activity.RESULT_OK
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.EaseInElastic
+import androidx.compose.animation.core.EaseOutElastic
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -99,15 +105,38 @@ fun NavGraph(
         }
         composable(
             Screen.Share.route,
-            arguments = listOf(navArgument(SHARE_SCREEN_ARGUMENT_ID) { defaultValue = "" })
-
+            arguments = listOf(navArgument(SHARE_SCREEN_ARGUMENT_ID) { defaultValue = "" }),
+            enterTransition = {
+                fadeIn(animationSpec = tween(700)) + slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(700)) + slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            }
         ) {
             ShareScreen(navHostController)
         }
         composable(
             Screen.ManageAccess.route,
-            arguments = listOf(navArgument(MANAGE_ACCESS_SCREEN_ARGUMENT_ID) { defaultValue = "" })
+            arguments = listOf(navArgument(MANAGE_ACCESS_SCREEN_ARGUMENT_ID) { defaultValue = "" }),
+            enterTransition = {
 
+                fadeIn(animationSpec = tween(700)) + slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    animationSpec = tween(700)
+                )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(700)) + slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(700)
+                )
+            }
         ) {
             ManageAccessScreen(navHostController = navHostController)
         }

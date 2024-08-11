@@ -47,4 +47,5 @@ interface DatabaseClient2 {
     suspend fun addEditor(document: Document, userData: UserData)
     suspend fun removeEditor(document: Document, userData: UserData, listener: () -> Unit)
     suspend fun addVersion(document: Document)
+    suspend fun getOwnerDataFromDocId(docId: String, listener: (copyUser) -> Unit)
 }

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.noteapp.DOCUMENT_SCREEN_ARGUMENT_ID
 import com.example.noteapp.MANAGE_ACCESS_SCREEN_ARGUMENT_ID
 import com.example.noteapp.Permission
+import com.example.noteapp.auth.domain.model.UserData
 import com.example.noteapp.auth.domain.model.copyUser
 import com.example.noteapp.note.domain.models.ShareHolder
 import com.example.noteapp.note.domain.repository.DatabaseClient2
@@ -39,6 +40,15 @@ class ManageAccessViewModel @Inject constructor(
             _docId.value?.let {
                 dbClient.getRealtimeShareHolderOfGivenDocument(it) { data ->
                     updatePeopleWithAccess(data)
+                }
+
+                dbClient.getOwnerDataFromDocId(it) { copyUser ->
+                    _state.update {
+                        it.copy(
+                            ownerData = copyUser
+                        )
+                    }
+
                 }
             }
         }
@@ -99,4 +109,5 @@ data class ManageAccessState(
     var peopleWithAcess: List<ShareHolder> = emptyList(),
     val showBottomSheet: Boolean = false,
     val selectedPeople: ShareHolder? = null,
+    val ownerData: copyUser? = null,
 )

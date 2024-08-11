@@ -8,6 +8,7 @@ data class Document(
     val title: String = "",
     val body: String = "",
     val ownerId: String = "",
+    val ownerEmail: String = "",
     val currentEditors: List<String> = emptyList(),
     val lastEditTime: Long = 0,
     val createdAt: Long = 0,

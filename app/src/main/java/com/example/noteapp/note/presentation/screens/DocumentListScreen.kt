@@ -61,6 +61,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,6 +82,7 @@ import com.example.noteapp.note.presentation.view_models.DocumentListViewModel
 import com.example.noteapp.note.presentation.view_models.FilterDoc
 import com.example.ui.theme.bodyFontFamily
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Locale
 import javax.inject.Inject
 
 
@@ -150,7 +152,9 @@ fun DocumentList(
 
     }.filter {
         if (query.value.isNotEmpty())
-            query.value in it.title
+            query.value.toLowerCase(Locale.ROOT) in it.title.toLowerCase(Locale.ROOT) || query.value.toLowerCase(
+                Locale.ROOT
+            ) in it.body.toLowerCase(Locale.ROOT)
         else true
     }
     val colors = if (isSystemInDarkTheme()) {

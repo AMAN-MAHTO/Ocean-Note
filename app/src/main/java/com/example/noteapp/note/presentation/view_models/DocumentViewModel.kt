@@ -158,13 +158,14 @@ class DocumentViewModel @Inject constructor(
 
             }
 
-//            dbClient.getEditorProfile(it) { currentEditors ->
-//                _state.update {
-//                    it.copy(
-//                        currentEditors = currentEditors
-//                    )
-//                }
-//            }
+            dbClient.getEditorProfile(it) { currentEditors ->
+                Log.d("Document", "openDoc: $currentEditors")
+                _state.update {
+                    it.copy(
+                        currentEditors = currentEditors
+                    )
+                }
+            }
         }
     }
 
@@ -215,41 +216,42 @@ class DocumentViewModel @Inject constructor(
     }
 
     fun onBackPress() {
-        if (_state.value.document.title.isEmpty() && _state.value.document.body.isEmpty()) {
-            viewModelScope.launch {
-                _docId.value?.let { dbClient.deleteDocumentById(it) }
-            }
-        } else {
-            viewModelScope.launch {
-                if (_isEditorAdded) {
-                    dbClient.updateDocument(_state.value.document)
-                    Log.d(TAG, "onCloseOrSave: updating doc done")
+        if (!_state.value.docDeleted)
+            if (_state.value.document.title.isEmpty() && _state.value.document.body.isEmpty()) {
+                viewModelScope.launch {
+                    _docId.value?.let { dbClient.deleteDocumentById(it) }
+                }
+            } else {
+                viewModelScope.launch {
+                    if (_isEditorAdded) {
+                        dbClient.updateDocument(_state.value.document)
+                        Log.d(TAG, "onCloseOrSave: updating doc done")
 
-                    rdbClient.removeEditorRealmListener(_state.value.document)
-                    Log.d(TAG, "onCloseOrSave: remove editor realm")
+                        rdbClient.removeEditorRealmListener(_state.value.document)
+                        Log.d(TAG, "onCloseOrSave: remove editor realm")
 
-                    _state.value.userData?.let {
-                        dbClient.removeEditor(_state.value.document, userData = it) {
-                            Log.d(TAG, "onCloseOrSave: remove editor")
-                            if (_isChancesMade) {
+                        _state.value.userData?.let {
+                            dbClient.removeEditor(_state.value.document, userData = it) {
+                                Log.d(TAG, "onCloseOrSave: remove editor")
+                                if (_isChancesMade) {
 
-                                viewModelScope.launch {
-                                    dbClient.addVersion(_state.value.document)
-                                    Log.d(TAG, "onCloseOrSave: adding version")
+                                    viewModelScope.launch {
+                                        dbClient.addVersion(_state.value.document)
+                                        Log.d(TAG, "onCloseOrSave: adding version")
 
-                                    //                        rdbClient.removeEditorRealm(_state.value.document)
-                                    //                        Log.d(TAG, "onCloseOrSave: removing realm")
+                                        //                        rdbClient.removeEditorRealm(_state.value.document)
+                                        //                        Log.d(TAG, "onCloseOrSave: removing realm")
 
+                                    }
                                 }
                             }
                         }
+
                     }
 
+
                 }
-
-
             }
-        }
     }
 
     fun onCloseOrSave(navHostController: NavHostController) {
@@ -323,6 +325,7 @@ class DocumentViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     openDeleteAlertDialog = false
                 )
+                _state.value.docDeleted = true
                 navHostController.popBackStack()
             }
         }
@@ -372,6 +375,7 @@ data class DocumentState(
     var openDeleteAlertDialog: Boolean = false,
     var openShareDialog: Boolean = false,
     var editMode: Boolean = false,
-//    var currentEditors: List<copyUser> = emptyList(),
+    var docDeleted: Boolean = false,
+    var currentEditors: List<copyUser> = emptyList(),
 )
 

@@ -103,21 +103,77 @@ fun ManageAccessScreenContent(
         val sheetState = rememberModalBottomSheetState()
         val scope = rememberCoroutineScope()
 
-        Column(Modifier.padding(it)) {
+        Column(
+            Modifier
+                .padding(it)
+                .padding(16.dp)) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 "People with access",
-                modifier = Modifier.padding(start = 32.dp),
+                modifier = Modifier.padding(bottom = 16.dp),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 )
             )
             LazyColumn {
+
+                item {
+                    if (state.value.ownerData != null)
+                        Card(
+                            modifier = Modifier
+                                .padding(vertical = 16.dp)
+                                .fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+
+                            ) {
+                                if (state.value.ownerData!!.profilePic != null) {
+                                    AsyncImage(
+                                        model = state.value.ownerData!!.profilePic,
+                                        contentDescription = "Profile picture",
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(start = 16.dp)
+                                ) {
+
+                                    if (state.value.ownerData!!.email != null) {
+                                        Text(
+                                            text = state.value.ownerData!!.email!!,
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                    }
+
+                                    Text(
+                                        text = "Owner",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+
+                                }
+
+
+                            }
+                        }
+
+                }
                 items(state.value.peopleWithAcess) {
                     Card(
                         modifier = Modifier
-                            .padding(8.dp)
                             .fillMaxWidth()
+                            .padding(vertical = 16.dp)
                             .clickable {
                                 onClickPeople(it)
                             },
@@ -130,7 +186,7 @@ fun ManageAccessScreenContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+
                         ) {
                             if (it.profilePic != null) {
                                 AsyncImage(
@@ -143,12 +199,11 @@ fun ManageAccessScreenContent(
                                 )
                             }
                             Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(start = 16.dp)
                             ) {
-
+                               
                                 if (it.email != null) {
                                     Text(
                                         text = it.email,
@@ -158,7 +213,8 @@ fun ManageAccessScreenContent(
 
                                 Text(
                                     text = it.permissionType,
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
 
                             }
