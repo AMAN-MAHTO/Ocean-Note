@@ -16,13 +16,13 @@ You can download the latest version of Ocean Note from the [Releases](https://gi
 
 ## Tech Stack 🛠️
 
-- **Jetpack Compose** for UI
-- **Kotlin** for concise code
-- **Dagger Hilt** for dependency injection
-- **MVVM** for architecture
-- **Nav-Graph** for navigation
-- **Canvas Animation** for custom animations
-- **Firebase** for backend services
+- **Jetpack Compose**: for UI
+- **Kotlin**: for concise code
+- **Dagger Hilt**: for dependency injection
+- **MVVM**: for architecture
+- **Nav-Graph**: for navigation
+- **Canvas Animation**: for custom animations
+- **Firebase**: for backend services
 
 
 https://github.com/user-attachments/assets/e3652382-6180-49b8-9d4e-5cc8778c67c8
