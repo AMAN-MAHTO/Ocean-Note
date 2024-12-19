@@ -3,7 +3,7 @@
 **Ocean Note** is a feature-rich Android note-taking app designed for seamless collaboration and intuitive note management. Built with modern Android technologies, it offers real-time editing, beautiful animations, and advanced sharing capabilities.
 
 ## Download
-You can download the latest version of Ocean Note from the [Releases](https://github.com/AMAN-MAHTO/NoteApp/releases/) page.
+You can download the latest version of Ocean Note from the [Releases](https://github.com/AMAN-MAHTO/NoteApp/releases/)
 
 
 ## Key Features 🚀
